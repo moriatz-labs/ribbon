@@ -6,7 +6,7 @@
   "framework": "vite-react",
   "providers": {
     "vercel": {
-      "projectName": "vscd",
+      "projectName": "vscd-control",
       "projectId": "prj_gHWmI2t7jCEwgghpGi1Krk58087Z",
       "teamId": "team_glj2kg2DPNA8NvVu6Um76AWA"
     },
@@ -23,7 +23,7 @@
   },
   "urls": {
     "local": "http://localhost:4310",
-    "production": "https://vscd.vercel.app",
+    "production": "https://vscd-silk.vercel.app",
     "supabase": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu",
     "repository": "https://github.com/Paul-M-Kallarackal/VSCD"
   },

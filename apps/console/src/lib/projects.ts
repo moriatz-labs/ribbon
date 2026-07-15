@@ -15,7 +15,7 @@ export const localProjects: ConsoleProject[] = [
       designSystem: true
     },
     urls: {
-      production: "https://vscd.vercel.app",
+      production: "https://vscd-silk.vercel.app",
       repository: "https://github.com/Paul-M-Kallarackal/VSCD"
     },
     updatedAt: "2026-07-15T00:00:00.000Z"

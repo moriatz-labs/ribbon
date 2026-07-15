@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .turbo/
+.vite/
 .vercel/
 .env
 .env.local
