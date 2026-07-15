@@ -1,0 +1,31 @@
+{
+  "$schema": "./schemas/vscd.schema.json",
+  "name": "VSCD",
+  "slug": "vscd",
+  "description": "A reusable control plane and scaffold for side projects.",
+  "framework": "vite-react",
+  "providers": {
+    "vercel": {
+      "projectName": "vscd",
+      "projectId": "prj_gHWmI2t7jCEwgghpGi1Krk58087Z",
+      "teamId": "team_glj2kg2DPNA8NvVu6Um76AWA"
+    },
+    "supabase": {
+      "projectRef": "zjvsngbtlbyeumatvzlu",
+      "region": "ap-south-1"
+    },
+    "cloudflare": {
+      "proxied": false
+    },
+    "designSystem": {
+      "source": "C:\\Users\\loqpm\\Documents\\UI"
+    }
+  },
+  "urls": {
+    "local": "http://localhost:4310",
+    "production": "https://vscd.vercel.app",
+    "supabase": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu",
+    "repository": "https://github.com/Paul-M-Kallarackal/VSCD"
+  },
+  "status": "production"
+}

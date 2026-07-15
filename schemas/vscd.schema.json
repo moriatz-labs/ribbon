@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vscd.local/schemas/vscd.schema.json",
+  "title": "VSCD project manifest",
+  "type": "object",
+  "required": ["name", "slug", "framework", "providers", "urls", "status"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "description": { "type": "string" },
+    "framework": { "enum": ["vite-react"] },
+    "providers": {
+      "type": "object",
+      "required": ["vercel", "supabase", "cloudflare", "designSystem"],
+      "properties": {
+        "vercel": { "type": "object" },
+        "supabase": { "type": "object" },
+        "cloudflare": {
+          "type": "object",
+          "required": ["proxied"],
+          "properties": { "proxied": { "const": false } }
+        },
+        "designSystem": { "type": "object", "required": ["source"] }
+      }
+    },
+    "urls": { "type": "object" },
+    "status": { "enum": ["draft", "local", "preview", "production", "archived"] }
+  }
+}
+

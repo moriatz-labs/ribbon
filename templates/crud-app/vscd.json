@@ -1,0 +1,25 @@
+{
+  "$schema": "https://vscd.local/schemas/vscd.schema.json",
+  "name": "__APP_TITLE__",
+  "slug": "__APP_SLUG__",
+  "description": "",
+  "framework": "vite-react",
+  "providers": {
+    "vercel": {
+      "projectName": "__APP_SLUG__"
+    },
+    "supabase": {},
+    "cloudflare": {
+      "proxied": false
+    },
+    "designSystem": {
+      "source": "C:\\Users\\loqpm\\Documents\\UI"
+    }
+  },
+  "urls": {
+    "local": "http://localhost:5173"
+  },
+  "status": "local",
+  "createdAt": "__CREATED_AT__"
+}
+
