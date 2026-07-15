@@ -1,0 +1,25 @@
+{
+  "name": "vscd",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run lint typecheck test build",
+    "codex:check": "pnpm vscd check .",
+    "dev": "turbo run dev",
+    "dev:console": "pnpm --filter @vscd/console dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "vscd": "tsx packages/cli/src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "tsx": "^4.20.6",
+    "turbo": "^2.8.0",
+    "typescript": "^6.0.0",
+    "vitest": "^4.0.0"
+  }
+}

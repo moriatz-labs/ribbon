@@ -1,0 +1,45 @@
+name: Release VSCD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: vscd-production
+  cancel-in-progress: true
+
+jobs:
+  deploy-console:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Pull Vercel settings
+        run: pnpm dlx vercel@50.28.0 pull --cwd apps/console --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Build once
+        run: pnpm dlx vercel@50.28.0 build --cwd apps/console --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy the verified artifact
+        id: deploy
+        shell: bash
+        run: echo "url=$(pnpm dlx vercel@50.28.0 deploy --cwd apps/console --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Publish URL
+        run: printf 'VSCD: %s\n' "${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+

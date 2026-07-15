@@ -1,0 +1,20 @@
+{
+  "$schema": "./schemas/vscd.schema.json",
+  "name": "VSCD",
+  "slug": "vscd",
+  "description": "A reusable control plane and scaffold for side projects.",
+  "framework": "vite-react",
+  "providers": {
+    "vercel": {},
+    "supabase": {},
+    "cloudflare": {
+      "proxied": false
+    },
+    "designSystem": {
+      "source": "C:\\Users\\loqpm\\Documents\\UI"
+    }
+  },
+  "urls": {},
+  "status": "local"
+}
+
