@@ -11,12 +11,20 @@ major_version = 17
 
 [auth]
 enabled = true
-site_url = "http://localhost:4310"
-additional_redirect_urls = ["http://127.0.0.1:4310", "http://localhost:4310"]
+site_url = "https://vscd.vercel.app"
+additional_redirect_urls = ["https://vscd.vercel.app", "http://127.0.0.1:4310", "http://localhost:4310"]
 enable_signup = true
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+max_frequency = "60s"
+otp_expiry = 3600
 
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

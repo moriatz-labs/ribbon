@@ -7,15 +7,18 @@ export const localProjects: ConsoleProject[] = [
     name: "VSCD",
     slug: "vscd",
     description: "Control plane, scaffolding, provider automation, and release checks.",
-    status: "local",
+    status: "production",
     providers: {
-      vercel: false,
-      supabase: false,
+      vercel: true,
+      supabase: true,
       cloudflare: false,
       designSystem: true
     },
-    urls: {},
-    updatedAt: new Date(0).toISOString()
+    urls: {
+      production: "https://vscd.vercel.app",
+      repository: "https://github.com/Paul-M-Kallarackal/VSCD"
+    },
+    updatedAt: "2026-07-15T00:00:00.000Z"
   },
   {
     id: "people-aggregator-local",
