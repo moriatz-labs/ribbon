@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+/// <reference types="node" />
+
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { CloudflareClient } from "@vscd/core";
 
@@ -10,8 +11,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
   }
 
   const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const cloudflareToken = process.env.CLOUDFLARE_API_TOKEN;
   const zoneId = process.env.CLOUDFLARE_ZONE_ID;
   const zoneName = process.env.CLOUDFLARE_ZONE_NAME;
@@ -25,11 +26,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
     return;
   }
 
-  const authClient = createClient(supabaseUrl, publishableKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
+  const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      apikey: publishableKey,
+      authorization: `Bearer ${token}`
+    }
   });
-  const { data, error } = await authClient.auth.getUser(token);
-  if (error || !data.user) {
+  if (!authResponse.ok) {
     response.status(401).json({ error: "The VSCD session is invalid or expired" });
     return;
   }
