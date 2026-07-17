@@ -53,13 +53,13 @@ describe("saveHostingerCredentials", () => {
     await saveHostingerCredentials({ token: "dns-token", domain: "moriatz.com", path });
     await saveDesignSystemCredentials({
       deployKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nprivate-material\n-----END OPENSSH PRIVATE KEY-----",
-      commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
+      commit: "4a488a815da102a547254ee16d1b4fabd741857b",
       path
     });
 
     const stored = await readFile(path, "utf8");
     expect(stored).toContain("HOSTINGER_API_TOKEN=dns-token");
     expect(stored).toContain("DESIGN_SYSTEM_DEPLOY_KEY=-----BEGIN OPENSSH PRIVATE KEY-----\\nprivate-material");
-    expect(stored).toContain("DESIGN_SYSTEM_COMMIT=fca3a35e26117f708000e8880e6c1fbabbfb3099");
+    expect(stored).toContain("DESIGN_SYSTEM_COMMIT=4a488a815da102a547254ee16d1b4fabd741857b");
   });
 });

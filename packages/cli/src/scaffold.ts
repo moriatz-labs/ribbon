@@ -2,7 +2,7 @@ import { cp, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const DEFAULT_DESIGN_SYSTEM_COMMIT = "fca3a35e26117f708000e8880e6c1fbabbfb3099";
+export const DEFAULT_DESIGN_SYSTEM_COMMIT = "4a488a815da102a547254ee16d1b4fabd741857b";
 
 function titleFromSlug(slug: string) {
   return slug
