@@ -7,7 +7,7 @@
   "scripts": {
     "build": "turbo run build",
     "check": "turbo run lint typecheck test build",
-    "codex:check": "pnpm vscd check .",
+    "codex:check": "pnpm --filter @vscd/core build && pnpm vscd check .",
     "dev": "turbo run dev",
     "dev:console": "pnpm --filter @vscd/console dev",
     "lint": "turbo run lint",
