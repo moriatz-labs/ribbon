@@ -6,6 +6,8 @@ Paul's design system is mandatory in every generated frontend. The template and 
 
 The private clone is a build dependency, not application source. Every generated Vitest configuration must extend `configDefaults.exclude` with `.vercel-design-system/**`; never allow a product test run to discover tests inside the cloned design-system repository.
 
+Only this repository's root manifest may use `projectType: "control-plane"`. The CRUD template must emit `projectType: "application"`; changing a generated app to the control-plane type to skip application checks is invalid.
+
 ## Required workflow
 
 1. Run `pnpm vscd doctor` before provisioning or linking providers.

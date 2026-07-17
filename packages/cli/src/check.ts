@@ -60,6 +60,7 @@ function checkRls(sql: string) {
 
 export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
   const results: CodexCheckResult[] = [];
+  let enforceApplicationDesignSystem = true;
   const requiredFiles = ["package.json", "vscd.json", ".env.example"];
 
   for (const file of requiredFiles) {
@@ -89,6 +90,7 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     const manifest = projectManifestSchema.parse(
       JSON.parse(await readFile(join(root, "vscd.json"), "utf8"))
     );
+    enforceApplicationDesignSystem = manifest.projectType !== "control-plane";
     const designSystem = manifest.providers.designSystem;
     const designSystemManifestOk =
       designSystem.repository === "https://github.com/Paul-M-Kallarackal/design-system" &&
@@ -167,6 +169,7 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
       : `browser secret references: ${secretLeaks.join(", ")}`
   });
 
+  if (enforceApplicationDesignSystem) {
   const packageJsonSource = await readFile(join(root, "package.json"), "utf8").catch(() => "{}");
   const packageJson = JSON.parse(packageJsonSource) as {
     scripts?: Record<string, string>;
@@ -275,6 +278,13 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
       ? "GitHub Actions supplies the private design-system credential and commit"
       : "GitHub Actions must pass DESIGN_SYSTEM_DEPLOY_KEY and DESIGN_SYSTEM_COMMIT to builds"
   });
+  } else {
+    results.push({
+      id: "design-system:control-plane-scope",
+      ok: true,
+      detail: "application wiring gates are enforced against generated scaffolds"
+    });
+  }
 
   const projectRelativePath = (file: string) => relative(root, file).replaceAll("\\", "/");
   const migrationFiles = files.filter((file) => {

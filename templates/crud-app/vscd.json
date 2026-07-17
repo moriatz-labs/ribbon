@@ -4,6 +4,7 @@
   "slug": "__APP_SLUG__",
   "description": "",
   "framework": "vite-react",
+  "projectType": "application",
   "providers": {
     "vercel": {
       "projectName": "__APP_SLUG__"

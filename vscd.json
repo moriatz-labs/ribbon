@@ -4,6 +4,7 @@
   "slug": "vscd",
   "description": "A reusable control plane and scaffold for side projects.",
   "framework": "vite-react",
+  "projectType": "control-plane",
   "providers": {
     "vercel": {
       "projectName": "vscd-control",

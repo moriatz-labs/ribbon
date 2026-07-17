@@ -9,6 +9,7 @@
     "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "description": { "type": "string" },
     "framework": { "enum": ["vite-react"] },
+    "projectType": { "enum": ["application", "control-plane"], "default": "application" },
     "providers": {
       "type": "object",
       "required": ["vercel", "supabase", "designSystem"],
@@ -73,6 +74,15 @@
     },
     "urls": { "type": "object" },
     "status": { "enum": ["draft", "local", "preview", "production", "archived"] }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "projectType": { "const": "control-plane" } },
+        "required": ["projectType"]
+      },
+      "then": { "properties": { "slug": { "const": "vscd" } } }
+    }
+  ]
 }
 

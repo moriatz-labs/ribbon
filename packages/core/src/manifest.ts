@@ -68,6 +68,7 @@ export const projectManifestSchema = z.object({
   slug: slugSchema,
   description: z.string().default(""),
   framework: z.literal("vite-react"),
+  projectType: z.enum(["application", "control-plane"]).optional(),
   providers: providersSchema,
   urls: z.object({
     local: urlSchema.optional(),
@@ -79,6 +80,14 @@ export const projectManifestSchema = z.object({
   status: projectStatusSchema,
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional()
+}).superRefine((manifest, context) => {
+  if (manifest.projectType === "control-plane" && manifest.slug !== "vscd") {
+    context.addIssue({
+      code: "custom",
+      path: ["projectType"],
+      message: "Only the VSCD repository may declare itself as the control plane."
+    });
+  }
 });
 
 export type ProjectManifest = z.infer<typeof projectManifestSchema>;

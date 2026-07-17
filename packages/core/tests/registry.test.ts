@@ -83,5 +83,16 @@ describe("registry", () => {
       })
     ).rejects.toThrow("Hostinger hostname must be a subdomain");
   });
+
+  it("does not allow generated apps to claim the control-plane exemption", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+
+    await expect(
+      upsertProject(join(directory, "registry.json"), {
+        ...project,
+        projectType: "control-plane"
+      })
+    ).rejects.toThrow("Only the VSCD repository");
+  });
 });
 

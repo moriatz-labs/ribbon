@@ -34,6 +34,7 @@ describe("scaffoldProject", () => {
         fromEnv: "HOSTINGER_MAIL_FROM"
       }
     });
+    expect(manifest.projectType).toBe("application");
     expect(manifest.providers.designSystem).toMatchObject({
       repository: "https://github.com/Paul-M-Kallarackal/design-system",
       commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
