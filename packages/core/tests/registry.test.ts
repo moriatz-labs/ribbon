@@ -12,8 +12,24 @@ const project: ProjectManifest = {
   providers: {
     vercel: {},
     supabase: {},
-    cloudflare: { proxied: false },
-    designSystem: { source: "C:\\design-system" }
+    hostinger: {
+      domain: "moriatz.com",
+      hostname: "example.moriatz.com",
+      ttl: 300
+    },
+    designSystem: {
+      source: "C:\\design-system",
+      repository: "https://github.com/Paul-M-Kallarackal/design-system",
+      commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
+      packages: [
+        "@paul/ui-core",
+        "@paul/ui-icons",
+        "@paul/ui-patterns",
+        "@paul/ui-tokens",
+        "@paul/ui-themes"
+      ],
+      requiredComponents: ["DatePicker"]
+    }
   },
   urls: {},
   status: "local"
@@ -42,10 +58,41 @@ describe("registry", () => {
         ...project,
         providers: {
           ...project.providers,
+          hostinger: undefined,
           cloudflare: { proxied: true as false }
         }
       })
     ).rejects.toThrow();
+  });
+
+  it("rejects a Hostinger hostname outside its configured domain", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+    const path = join(directory, "registry.json");
+
+    await expect(
+      upsertProject(path, {
+        ...project,
+        providers: {
+          ...project.providers,
+          hostinger: {
+            domain: "moriatz.com",
+            hostname: "example.net",
+            ttl: 300
+          }
+        }
+      })
+    ).rejects.toThrow("Hostinger hostname must be a subdomain");
+  });
+
+  it("does not allow generated apps to claim the control-plane exemption", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+
+    await expect(
+      upsertProject(join(directory, "registry.json"), {
+        ...project,
+        projectType: "control-plane"
+      })
+    ).rejects.toThrow("Only the VSCD repository");
   });
 });
 

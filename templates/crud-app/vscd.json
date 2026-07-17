@@ -4,16 +4,35 @@
   "slug": "__APP_SLUG__",
   "description": "",
   "framework": "vite-react",
+  "projectType": "application",
   "providers": {
     "vercel": {
       "projectName": "__APP_SLUG__"
     },
     "supabase": {},
-    "cloudflare": {
-      "proxied": false
+    "hostinger": {
+      "domain": "__BASE_DOMAIN__",
+      "hostname": "__APP_DOMAIN__",
+      "ttl": 300,
+      "mail": {
+        "provider": "hostinger-mail",
+        "apiTokenEnv": "HOSTINGER_MAIL_API_TOKEN",
+        "mailboxIdEnv": "HOSTINGER_MAILBOX_ID",
+        "fromEnv": "HOSTINGER_MAIL_FROM"
+      }
     },
     "designSystem": {
-      "source": "C:\\Users\\loqpm\\Documents\\UI"
+      "source": "C:\\Users\\loqpm\\Desktop\\Paul\\design-system",
+      "repository": "https://github.com/Paul-M-Kallarackal/design-system",
+      "commit": "__DESIGN_SYSTEM_COMMIT__",
+      "packages": [
+        "@paul/ui-core",
+        "@paul/ui-icons",
+        "@paul/ui-patterns",
+        "@paul/ui-tokens",
+        "@paul/ui-themes"
+      ],
+      "requiredComponents": ["DatePicker"]
     }
   },
   "urls": {

@@ -5,24 +5,24 @@
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "build": "tsc -b && vite build",
-    "check": "pnpm lint && pnpm test && pnpm build",
+    "build": "pnpm prepare:design-system && tsc --noEmit && vite build",
+    "check": "pnpm prepare:design-system && pnpm lint && pnpm test && pnpm build",
     "dev": "vite",
-    "lint": "tsc -b --noEmit",
+    "dns": "node scripts/configure-domain.mjs",
+    "lint": "tsc --noEmit",
+    "prepare:design-system": "node scripts/prepare-design-system.mjs",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.80.0",
-    "lucide-react": "^0.548.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.16",
+    "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",
-    "tailwindcss": "^4.1.16",
     "typescript": "^6.0.0",
     "vite": "^7.1.12",
     "vitest": "^4.0.0"

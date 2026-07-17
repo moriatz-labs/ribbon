@@ -1,14 +1,39 @@
 import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { LogOut, Plus, Trash2, Upload } from "lucide-react";
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  Flex,
+  Grid,
+  IconButton,
+  Stack,
+  Surface,
+  Text,
+  Textarea,
+  TextField,
+  TextStyle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@paul/ui-core";
+import { LogOutIcon, PlusIcon, TrashIcon } from "@paul/ui-icons";
+import { DatePicker } from "@paul/ui-patterns";
 import { supabase } from "./lib/supabase";
 
 interface RecordItem {
   id: string;
   title: string;
   body: string;
+  due_date: string | null;
   attachment_path: string | null;
   updated_at: string;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
 }
 
 export function App() {
@@ -16,6 +41,7 @@ export function App() {
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [items, setItems] = useState<RecordItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -35,84 +61,176 @@ export function App() {
     if (session) void loadItems().catch((error: Error) => setMessage(error.message));
   }, [session]);
 
+  async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      const response = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "The sign-in link could not be sent.");
+      setMessage("Check your email for the sign-in link.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The sign-in link could not be sent.");
+    }
+  }
+
+  async function addItem(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const { error } = await supabase.from("items").insert({ title, body, due_date: dueDate || null });
+    if (error) return setMessage(error.message);
+    setTitle("");
+    setBody("");
+    setDueDate("");
+    setMessage(null);
+    await loadItems();
+  }
+
   if (!session) {
     return (
-      <main className="auth-page">
-        <section className="auth-card">
-          <p className="eyebrow">__APP_TITLE__</p>
-          <h1>Sign in to your workspace.</h1>
-          <p>A secure link will be sent to your email.</p>
-          <form onSubmit={async (event) => {
-            event.preventDefault();
-            const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
-            setMessage(error?.message ?? "Check your email for the sign-in link.");
-          }}>
-            <label htmlFor="email">Email</label>
-            <input id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
-            <button type="submit">Send sign-in link</button>
-          </form>
-          {message ? <p role="status">{message}</p> : null}
-        </section>
-      </main>
+      <Box as="main" className="auth-page">
+        <Container size="reading">
+          <Surface className="auth-card" tone="raised" radius="xl" padding="lg">
+            <Stack gap="$6">
+              <Stack gap="$2">
+                <TextStyle textStyle="eyebrow" tone="muted">__APP_TITLE__</TextStyle>
+                <TextStyle as="h1" textStyle="headingLg">Sign in to your workspace</TextStyle>
+                <Text color="$mutedForeground" css={{ margin: 0 }}>A secure magic link will be sent to your email.</Text>
+              </Stack>
+              <form onSubmit={sendMagicLink}>
+                <Stack gap="$4">
+                  <TextField
+                    autoComplete="email"
+                    inputMode="email"
+                    label="Email address"
+                    name="email"
+                    onChange={(event) => setEmail(event.currentTarget.value)}
+                    required
+                    spellCheck={false}
+                    type="email"
+                    value={email}
+                  />
+                  <Button type="submit">Send sign-in link</Button>
+                </Stack>
+              </form>
+              {message ? <Alert>{message}</Alert> : null}
+            </Stack>
+          </Surface>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <main className="workspace">
-      <header>
-        <div><p className="eyebrow">Workspace</p><h1>__APP_TITLE__</h1></div>
-        <button className="icon-button" aria-label="Sign out" title="Sign out" onClick={() => void supabase.auth.signOut()}>
-          <LogOut aria-hidden="true" size={18} />
-        </button>
-      </header>
+    <Box as="main" className="workspace">
+      <Container>
+        <Stack gap="$6">
+          <Flex as="header" alignItems="center" justifyContent="space-between" gap="$4">
+            <Stack gap="$1">
+              <TextStyle textStyle="eyebrow" tone="muted">Workspace</TextStyle>
+              <TextStyle as="h1" textStyle="headingLg">__APP_TITLE__</TextStyle>
+            </Stack>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <IconButton
+                    icon={<LogOutIcon width={18} height={18} />}
+                    label="Sign out"
+                    variant="outline"
+                    onClick={() => void supabase.auth.signOut()}
+                    type="button"
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Sign out</TooltipContent>
+            </Tooltip>
+          </Flex>
 
-      <section className="composer" aria-labelledby="new-record-heading">
-        <div><p className="eyebrow">New record</p><h2 id="new-record-heading">Capture something useful.</h2></div>
-        <form onSubmit={async (event) => {
-          event.preventDefault();
-          const { error } = await supabase.from("items").insert({ title, body });
-          if (error) return setMessage(error.message);
-          setTitle(""); setBody(""); setMessage(null); await loadItems();
-        }}>
-          <label htmlFor="title">Title</label>
-          <input id="title" required value={title} onChange={(event) => setTitle(event.target.value)} />
-          <label htmlFor="body">Details</label>
-          <textarea id="body" rows={4} value={body} onChange={(event) => setBody(event.target.value)} />
-          <button type="submit"><Plus aria-hidden="true" size={17} />Add record</button>
-        </form>
-      </section>
+          <Surface as="section" tone="raised" radius="lg" padding="lg" aria-labelledby="new-record-heading">
+            <Grid className="composer" columns={{ initial: "1fr", md: "minmax(14rem, .7fr) minmax(0, 1.3fr)" }} gap="$6">
+              <Stack gap="$2">
+                <TextStyle textStyle="eyebrow" tone="muted">New record</TextStyle>
+                <TextStyle as="h2" id="new-record-heading" textStyle="headingSm">Capture something useful</TextStyle>
+                <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>
+                  Use Paul’s components as the default building blocks for every generated product.
+                </Text>
+              </Stack>
+              <form onSubmit={addItem}>
+                <Stack gap="$4">
+                  <TextField label="Title" required value={title} onChange={(event) => setTitle(event.currentTarget.value)} />
+                  <Textarea label="Details" rows={4} value={body} onChange={(event) => setBody(event.currentTarget.value)} />
+                  <DatePicker label="Review date" value={dueDate} onValueChange={setDueDate} />
+                  <Button leftIcon={<PlusIcon width={17} height={17} />} type="submit">Add record</Button>
+                </Stack>
+              </form>
+            </Grid>
+          </Surface>
 
-      {message ? <p className="message" role="status">{message}</p> : null}
+          {message ? <Alert>{message}</Alert> : null}
 
-      <section className="record-grid" aria-label="Records">
-        {items.map((item) => (
-          <article className="record-card" key={item.id}>
-            <div><h2>{item.title}</h2><p>{item.body || "No details yet."}</p></div>
-            <footer>
-              <label className="icon-button" title="Upload attachment">
-                <Upload aria-hidden="true" size={17} />
-                <span className="sr-only">Upload attachment</span>
-                <input className="sr-only" type="file" onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  const path = `${session.user.id}/${item.id}/${file.name}`;
-                  const upload = await supabase.storage.from("attachments").upload(path, file, { upsert: true });
-                  if (upload.error) return setMessage(upload.error.message);
-                  const update = await supabase.from("items").update({ attachment_path: path }).eq("id", item.id);
-                  if (update.error) return setMessage(update.error.message);
-                  await loadItems();
-                }} />
-              </label>
-              <button className="icon-button" aria-label={`Delete ${item.title}`} title="Delete" onClick={async () => {
-                const { error } = await supabase.from("items").delete().eq("id", item.id);
-                if (error) return setMessage(error.message);
-                await loadItems();
-              }}><Trash2 aria-hidden="true" size={17} /></button>
-            </footer>
-          </article>
-        ))}
-      </section>
-    </main>
+          <Grid as="section" className="record-grid" aria-label="Records" columns={{ initial: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" }} gap="$5">
+            {items.length === 0 ? (
+              <Surface tone="inset" radius="lg" padding="lg">
+                <Stack gap="$1">
+                  <TextStyle textStyle="title">No records yet</TextStyle>
+                  <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>Add the first record above.</Text>
+                </Stack>
+              </Surface>
+            ) : null}
+            {items.map((item) => (
+              <Surface as="article" className="record-card" key={item.id} tone="default" radius="lg" padding="lg">
+                <Stack gap="$5" css={{ height: "100%" }}>
+                  <Stack gap="$2">
+                    <TextStyle as="h2" textStyle="title">{item.title}</TextStyle>
+                    <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>{item.body || "No details yet."}</Text>
+                    {item.due_date ? <TextStyle textStyle="caption" tone="muted">Review {formatDate(item.due_date)}</TextStyle> : null}
+                  </Stack>
+                  <Stack gap="$3" css={{ marginTop: "auto" }}>
+                    <TextField
+                      label="Attachment"
+                      type="file"
+                      onChange={async (event) => {
+                        const file = event.currentTarget.files?.[0];
+                        if (!file) return;
+                        const path = `${session.user.id}/${item.id}/${file.name}`;
+                        const upload = await supabase.storage.from("attachments").upload(path, file, { upsert: true });
+                        if (upload.error) return setMessage(upload.error.message);
+                        const update = await supabase.from("items").update({ attachment_path: path }).eq("id", item.id);
+                        if (update.error) return setMessage(update.error.message);
+                        await loadItems();
+                      }}
+                    />
+                    <Flex justifyContent="flex-end">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <IconButton
+                              icon={<TrashIcon width={17} height={17} />}
+                              label={`Delete ${item.title}`}
+                              variant="ghost"
+                              tone="rose"
+                              type="button"
+                              onClick={async () => {
+                                if (!window.confirm(`Delete ${item.title}?`)) return;
+                                const { error } = await supabase.from("items").delete().eq("id", item.id);
+                                if (error) return setMessage(error.message);
+                                await loadItems();
+                              }}
+                            />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete record</TooltipContent>
+                      </Tooltip>
+                    </Flex>
+                  </Stack>
+                </Stack>
+              </Surface>
+            ))}
+          </Grid>
+        </Stack>
+      </Container>
+    </Box>
   );
 }
-

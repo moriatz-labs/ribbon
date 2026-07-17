@@ -4,6 +4,7 @@
   "slug": "vscd",
   "description": "A reusable control plane and scaffold for side projects.",
   "framework": "vite-react",
+  "projectType": "control-plane",
   "providers": {
     "vercel": {
       "projectName": "vscd-control",
@@ -17,8 +18,23 @@
     "cloudflare": {
       "proxied": false
     },
+    "hostinger": {
+      "domain": "moriatz.com",
+      "hostname": "vscd.moriatz.com",
+      "ttl": 300
+    },
     "designSystem": {
-      "source": "C:\\Users\\loqpm\\Documents\\UI"
+      "source": "C:\\Users\\loqpm\\Desktop\\Paul\\design-system",
+      "repository": "https://github.com/Paul-M-Kallarackal/design-system",
+      "commit": "fca3a35e26117f708000e8880e6c1fbabbfb3099",
+      "packages": [
+        "@paul/ui-core",
+        "@paul/ui-icons",
+        "@paul/ui-patterns",
+        "@paul/ui-tokens",
+        "@paul/ui-themes"
+      ],
+      "requiredComponents": ["DatePicker"]
     }
   },
   "urls": {
