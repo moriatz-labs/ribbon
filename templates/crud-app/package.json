@@ -11,7 +11,7 @@
     "dns": "node scripts/configure-domain.mjs",
     "lint": "tsc --noEmit",
     "prepare:design-system": "node scripts/prepare-design-system.mjs",
-    "test": "vitest run api src tests --passWithNoTests"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.80.0",

@@ -150,5 +150,6 @@ describe("Codex check", () => {
     const results = await runCodexCheck(root);
     expect(results.find((check) => check.id === "design-system:no-bypasses")?.ok).toBe(false);
     expect(results.find((check) => check.id === "design-system:imports")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "design-system:test-isolation")?.ok).toBe(false);
   });
 });

@@ -4,6 +4,8 @@ VSCD is the only product name. It coordinates Vercel, Supabase, Hostinger DNS, a
 
 Paul's design system is mandatory in every generated frontend. The template and `vscd check` must require public `@paul/*` imports, root tokens/provider wiring, a pinned private-repository commit, remote-build credentials, and `DatePicker` from `@paul/ui-patterns` for every date field. Never generate Tailwind, shadcn/ui, Lucide, direct Radix imports, a native application-level `input[type=date]`, or a local replacement for an available design-system component.
 
+The private clone is a build dependency, not application source. Every generated Vitest configuration must extend `configDefaults.exclude` with `.vercel-design-system/**`; never allow a product test run to discover tests inside the cloned design-system repository.
+
 ## Required workflow
 
 1. Run `pnpm vscd doctor` before provisioning or linking providers.

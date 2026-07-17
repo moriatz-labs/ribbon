@@ -20,6 +20,7 @@ describe("scaffoldProject", () => {
     const app = await readFile(join(target, "src", "App.tsx"), "utf8");
     const main = await readFile(join(target, "src", "main.tsx"), "utf8");
     const packageJson = await readFile(join(target, "package.json"), "utf8");
+    const vitestConfig = await readFile(join(target, "vitest.config.ts"), "utf8");
     const magicLink = await readFile(join(target, "api", "auth", "magic-link.ts"), "utf8");
 
     expect(manifest.providers.hostinger).toMatchObject({
@@ -46,6 +47,7 @@ describe("scaffoldProject", () => {
     expect(app).not.toContain("lucide-react");
     expect(main).toContain('import "@paul/ui-tokens/styles.css"');
     expect(packageJson).toContain("prepare:design-system");
+    expect(vitestConfig).toContain('".vercel-design-system/**"');
     expect(magicLink).toContain("https://notes-app.moriatz.com");
     expect(magicLink).not.toContain("__APP_TITLE__");
   });

@@ -186,6 +186,18 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
       : "scripts/prepare-design-system.mjs and a build-time prepare:design-system step are required"
   });
 
+  const vitestConfigSource = await readFile(join(root, "vitest.config.ts"), "utf8").catch(() => "");
+  const testIsolationOk =
+    vitestConfigSource.includes("configDefaults.exclude") &&
+    vitestConfigSource.includes(".vercel-design-system/**");
+  results.push({
+    id: "design-system:test-isolation",
+    ok: testIsolationOk,
+    detail: testIsolationOk
+      ? "application tests exclude the private design-system clone"
+      : "vitest.config.ts must extend configDefaults.exclude with .vercel-design-system/**"
+  });
+
   const envExample = await readFile(join(root, ".env.example"), "utf8").catch(() => "");
   const designSystemEnvOk =
     /^DESIGN_SYSTEM_COMMIT=[0-9a-f]{40}$/m.test(envExample) &&
