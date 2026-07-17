@@ -245,12 +245,19 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     /^(?:lucide-react|tailwindcss|@tailwindcss\/|@radix-ui\/|@shadcn\/)/.test(dependency)
   );
   const nativeDateInputs: string[] = [];
+  const nativeDateSelectors: string[] = [];
   for (const file of uiSourceFiles) {
-    if (/<input\b[^>]*\btype\s*=\s*["']date["']/i.test(await readFile(file, "utf8"))) {
+    const path = relative(root, file);
+    if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path)) continue;
+    const source = await readFile(file, "utf8");
+    if (/<input\b[^>]*\btype\s*=\s*["']date["']/i.test(source)) {
       nativeDateInputs.push(relative(root, file));
     }
+    if (/querySelector(?:All)?(?:<[^>]+>)?\s*\(\s*["'`]input\s*\[\s*type\s*=\s*["']date["']\s*\]["'`]/i.test(source)) {
+      nativeDateSelectors.push(path);
+    }
   }
-  const prohibitedOk = prohibitedDependencies.length === 0 && nativeDateInputs.length === 0;
+  const prohibitedOk = prohibitedDependencies.length === 0 && nativeDateInputs.length === 0 && nativeDateSelectors.length === 0;
   results.push({
     id: "design-system:no-bypasses",
     ok: prohibitedOk,
@@ -258,7 +265,8 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
       ? "no Tailwind, Lucide, shadcn, direct Radix, or native date-input bypasses found"
       : [
           prohibitedDependencies.length ? `prohibited dependencies: ${prohibitedDependencies.join(", ")}` : "",
-          nativeDateInputs.length ? `native date inputs: ${nativeDateInputs.join(", ")}` : ""
+          nativeDateInputs.length ? `native date inputs: ${nativeDateInputs.join(", ")}` : "",
+          nativeDateSelectors.length ? `native date selectors: ${nativeDateSelectors.join(", ")}` : ""
         ].filter(Boolean).join("; ")
   });
 

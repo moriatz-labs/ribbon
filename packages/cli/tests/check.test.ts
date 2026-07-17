@@ -7,7 +7,7 @@ import { runCodexCheck } from "../src/check.js";
 const designSystem = {
   source: "C:\\UI",
   repository: "https://github.com/Paul-M-Kallarackal/design-system",
-  commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
+  commit: "4a488a815da102a547254ee16d1b4fabd741857b",
   packages: [
     "@paul/ui-core",
     "@paul/ui-icons",
@@ -122,7 +122,7 @@ describe("Codex check", () => {
       JSON.stringify({ dependencies: { "lucide-react": "latest" } }),
       "utf8"
     );
-    await writeFile(join(root, ".env.example"), "DESIGN_SYSTEM_COMMIT=fca3a35e26117f708000e8880e6c1fbabbfb3099\n# DESIGN_SYSTEM_DEPLOY_KEY", "utf8");
+    await writeFile(join(root, ".env.example"), "DESIGN_SYSTEM_COMMIT=4a488a815da102a547254ee16d1b4fabd741857b\n# DESIGN_SYSTEM_DEPLOY_KEY", "utf8");
     await writeFile(join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'", "utf8");
     await writeFile(
       join(root, "src", "App.tsx"),
@@ -151,5 +151,39 @@ describe("Codex check", () => {
     expect(results.find((check) => check.id === "design-system:no-bypasses")?.ok).toBe(false);
     expect(results.find((check) => check.id === "design-system:imports")?.ok).toBe(false);
     expect(results.find((check) => check.id === "design-system:test-isolation")?.ok).toBe(false);
+  });
+
+  it("rejects selectors that focus a native date input", async () => {
+    const root = await mkdtemp(join(tmpdir(), "vscd-date-selector-check-"));
+    await mkdir(join(root, "src"), { recursive: true });
+    await writeFile(join(root, "package.json"), "{}", "utf8");
+    await writeFile(join(root, ".env.example"), "DESIGN_SYSTEM_COMMIT=4a488a815da102a547254ee16d1b4fabd741857b\n# DESIGN_SYSTEM_DEPLOY_KEY", "utf8");
+    await writeFile(join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'", "utf8");
+    await writeFile(
+      join(root, "src", "App.tsx"),
+      `export function focusDate(){ document.querySelector<HTMLInputElement>('input[type="date"]')?.focus(); }`,
+      "utf8"
+    );
+    await writeFile(
+      join(root, "vscd.json"),
+      JSON.stringify({
+        name: "Selector Test",
+        slug: "selector-test",
+        framework: "vite-react",
+        providers: {
+          vercel: {},
+          supabase: {},
+          cloudflare: { proxied: false },
+          designSystem
+        },
+        urls: {},
+        status: "local"
+      }),
+      "utf8"
+    );
+
+    const results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "design-system:no-bypasses")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "design-system:no-bypasses")?.detail).toContain("native date selectors");
   });
 });

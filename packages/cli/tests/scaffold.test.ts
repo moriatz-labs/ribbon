@@ -37,7 +37,7 @@ describe("scaffoldProject", () => {
     expect(manifest.projectType).toBe("application");
     expect(manifest.providers.designSystem).toMatchObject({
       repository: "https://github.com/Paul-M-Kallarackal/design-system",
-      commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
+      commit: "4a488a815da102a547254ee16d1b4fabd741857b",
       requiredComponents: ["DatePicker"]
     });
     expect(release).toContain("notes-app.moriatz.com");
@@ -45,6 +45,8 @@ describe("scaffoldProject", () => {
     expect(envExample).toContain("HOSTINGER_MAIL_API_TOKEN=");
     expect(app).toContain('fetch("/api/auth/magic-link"');
     expect(app).toContain('import { DatePicker } from "@paul/ui-patterns"');
+    expect(app).toContain('id="review-date"');
+    expect(app).not.toContain('input[type="date"]');
     expect(app).not.toContain("lucide-react");
     expect(main).toContain('import "@paul/ui-tokens/styles.css"');
     expect(packageJson).toContain("prepare:design-system");
