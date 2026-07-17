@@ -11,7 +11,11 @@
     "framework": { "enum": ["vite-react"] },
     "providers": {
       "type": "object",
-      "required": ["vercel", "supabase", "cloudflare", "designSystem"],
+      "required": ["vercel", "supabase", "designSystem"],
+      "anyOf": [
+        { "required": ["cloudflare"] },
+        { "required": ["hostinger"] }
+      ],
       "properties": {
         "vercel": { "type": "object" },
         "supabase": { "type": "object" },
@@ -20,7 +24,51 @@
           "required": ["proxied"],
           "properties": { "proxied": { "const": false } }
         },
-        "designSystem": { "type": "object", "required": ["source"] }
+        "hostinger": {
+          "type": "object",
+          "required": ["domain", "hostname"],
+          "properties": {
+            "domain": { "type": "string", "minLength": 1 },
+            "hostname": { "type": "string", "minLength": 1 },
+            "ttl": { "type": "integer", "minimum": 300, "maximum": 86400, "default": 300 },
+            "mail": {
+              "type": "object",
+              "required": ["provider", "apiTokenEnv", "mailboxIdEnv", "fromEnv"],
+              "properties": {
+                "provider": { "const": "hostinger-mail" },
+                "apiTokenEnv": { "const": "HOSTINGER_MAIL_API_TOKEN" },
+                "mailboxIdEnv": { "const": "HOSTINGER_MAILBOX_ID" },
+                "fromEnv": { "const": "HOSTINGER_MAIL_FROM" }
+              }
+            }
+          }
+        },
+        "designSystem": {
+          "type": "object",
+          "required": ["source", "repository", "commit", "packages", "requiredComponents"],
+          "properties": {
+            "source": { "type": "string", "minLength": 1 },
+            "repository": { "type": "string", "format": "uri" },
+            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "packages": {
+              "type": "array",
+              "prefixItems": [
+                { "const": "@paul/ui-core" },
+                { "const": "@paul/ui-icons" },
+                { "const": "@paul/ui-patterns" },
+                { "const": "@paul/ui-tokens" },
+                { "const": "@paul/ui-themes" }
+              ],
+              "minItems": 5,
+              "maxItems": 5
+            },
+            "requiredComponents": {
+              "type": "array",
+              "contains": { "const": "DatePicker" },
+              "minContains": 1
+            }
+          }
+        }
       }
     },
     "urls": { "type": "object" },

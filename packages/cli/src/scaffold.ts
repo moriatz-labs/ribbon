@@ -2,6 +2,8 @@ import { cp, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+export const DEFAULT_DESIGN_SYSTEM_COMMIT = "fca3a35e26117f708000e8880e6c1fbabbfb3099";
+
 function titleFromSlug(slug: string) {
   return slug
     .split("-")
@@ -33,7 +35,12 @@ function findVscdRoot() {
   return resolve(dirname(currentFile), "../../..");
 }
 
-export async function scaffoldProject(slug: string, targetPath: string, title?: string) {
+export async function scaffoldProject(
+  slug: string,
+  targetPath: string,
+  title?: string,
+  domain = "moriatz.com"
+) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
     throw new Error("Project slug must use lowercase letters, digits, and hyphens.");
   }
@@ -43,6 +50,9 @@ export async function scaffoldProject(slug: string, targetPath: string, title?: 
   await replaceInFiles(targetPath, {
     "__APP_SLUG__": slug,
     "__APP_TITLE__": title ?? titleFromSlug(slug),
+    "__APP_DOMAIN__": `${slug}.${domain}`,
+    "__BASE_DOMAIN__": domain,
+    "__DESIGN_SYSTEM_COMMIT__": DEFAULT_DESIGN_SYSTEM_COMMIT,
     "__CREATED_AT__": new Date().toISOString()
   });
 
