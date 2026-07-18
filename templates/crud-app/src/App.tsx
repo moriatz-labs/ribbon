@@ -125,7 +125,7 @@ export function App() {
                 <Stack gap="$4">
                   <TextField label="Title" required value={title} onChange={(event) => setTitle(event.currentTarget.value)} />
                   <Textarea label="Details" rows={4} value={body} onChange={(event) => setBody(event.currentTarget.value)} />
-                  <DatePicker label="Review date" value={dueDate} onValueChange={setDueDate} />
+                  <DatePicker id="review-date" label="Review date" value={dueDate} onValueChange={setDueDate} />
                   <Button leftIcon={<PlusIcon width={17} height={17} />} type="submit">Add record</Button>
                 </Stack>
               </form>

@@ -37,7 +37,7 @@ describe("scaffoldProject", () => {
     expect(manifest.providers.designSystem).toMatchObject({
       source: "../design-system",
       repository: "https://github.com/Paul-M-Kallarackal/design-system",
-      commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
+      commit: "4a488a815da102a547254ee16d1b4fabd741857b",
       requiredComponents: ["DatePicker"]
     });
     expect(release).toContain("notes-app.moriatz.com");
