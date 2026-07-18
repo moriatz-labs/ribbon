@@ -11,8 +11,8 @@ major_version = 17
 
 [auth]
 enabled = true
-site_url = "https://vscd-silk.vercel.app"
-additional_redirect_urls = ["https://vscd-silk.vercel.app", "http://127.0.0.1:4310", "http://localhost:4310"]
+site_url = "https://vscd.moriatz.com"
+additional_redirect_urls = ["https://vscd.moriatz.com", "https://vscd-silk.vercel.app", "http://127.0.0.1:4310", "http://localhost:4310"]
 enable_signup = true
 
 [auth.email]

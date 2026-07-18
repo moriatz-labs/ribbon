@@ -41,7 +41,7 @@
   },
   "urls": {
     "local": "http://localhost:4310",
-    "production": "https://vscd-silk.vercel.app",
+    "production": "https://vscd.moriatz.com",
     "backend": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu",
     "repository": "https://github.com/Paul-M-Kallarackal/VSCD"
   },
