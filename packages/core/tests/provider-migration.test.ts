@@ -10,6 +10,8 @@ interface ProviderSlots {
   dns?: { provider?: string; zoneId?: string };
 }
 
+const PGLITE_TEST_TIMEOUT_MS = 30_000;
+
 describe("provider capability migration", () => {
   it("normalizes legacy registry rows and preserves canonical rows", async () => {
     const database = new PGlite();
@@ -59,5 +61,5 @@ describe("provider capability migration", () => {
     } finally {
       await database.close();
     }
-  });
+  }, PGLITE_TEST_TIMEOUT_MS);
 });
