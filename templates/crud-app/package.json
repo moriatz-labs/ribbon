@@ -14,7 +14,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.80.0",
+    "@supabase/supabase-js": "2.110.7",
+    "firebase": "12.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

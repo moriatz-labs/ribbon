@@ -1,28 +1,34 @@
 {
-  "$schema": "https://vscd.local/schemas/vscd.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Paul-M-Kallarackal/VSCD/main/schemas/vscd.schema.json",
+  "manifestVersion": 2,
   "name": "__APP_TITLE__",
   "slug": "__APP_SLUG__",
   "description": "",
   "framework": "vite-react",
   "projectType": "application",
   "providers": {
-    "vercel": {
-      "projectName": "__APP_SLUG__"
+    "deployment": {
+      "provider": "vercel",
+      "projectName": "__APP_SLUG__",
+      "cnameTarget": "cname.vercel-dns.com"
     },
-    "supabase": {},
-    "hostinger": {
+    "backend": {
+      "provider": "supabase"
+    },
+    "dns": {
+      "provider": "hostinger",
       "domain": "__BASE_DOMAIN__",
       "hostname": "__APP_DOMAIN__",
-      "ttl": 300,
-      "mail": {
-        "provider": "hostinger-mail",
-        "apiTokenEnv": "HOSTINGER_MAIL_API_TOKEN",
-        "mailboxIdEnv": "HOSTINGER_MAILBOX_ID",
-        "fromEnv": "HOSTINGER_MAIL_FROM"
-      }
+      "ttl": 300
+    },
+    "mail": {
+      "provider": "hostinger-mail",
+      "apiTokenEnv": "HOSTINGER_MAIL_API_TOKEN",
+      "mailboxIdEnv": "HOSTINGER_MAILBOX_ID",
+      "fromEnv": "HOSTINGER_MAIL_FROM"
     },
     "designSystem": {
-      "source": "C:\\Users\\loqpm\\Desktop\\Paul\\design-system",
+      "source": "__DESIGN_SYSTEM_SOURCE__",
       "repository": "https://github.com/Paul-M-Kallarackal/design-system",
       "commit": "__DESIGN_SYSTEM_COMMIT__",
       "packages": [
@@ -41,4 +47,3 @@
   "status": "local",
   "createdAt": "__CREATED_AT__"
 }
-

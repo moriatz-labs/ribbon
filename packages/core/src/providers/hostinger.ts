@@ -1,3 +1,9 @@
+import type {
+  DnsProviderAdapter,
+  DnsProvisionInput,
+  DnsProvisionResult
+} from "./contracts.js";
+
 export interface HostingerDnsRecordValue {
   content: string;
   is_disabled?: boolean;
@@ -10,7 +16,8 @@ export interface HostingerDnsRecordGroup {
   type: string;
 }
 
-export interface HostingerCnameResult {
+export interface HostingerCnameResult extends DnsProvisionResult {
+  provider: "hostinger";
   changed: boolean;
   hostname: string;
   target: string;
@@ -139,11 +146,24 @@ export class HostingerClient {
     };
 
     if (unchanged) {
-      return { changed: false, hostname, target, record };
+      return { provider: "hostinger", changed: false, hostname, target, record };
     }
 
     await this.validateDnsRecords(domain, [record]);
     await this.updateDnsRecords(domain, [record]);
-    return { changed: true, hostname, target, record };
+    return { provider: "hostinger", changed: true, hostname, target, record };
+  }
+}
+
+export class HostingerDnsAdapter implements DnsProviderAdapter {
+  readonly id = "hostinger" as const;
+
+  constructor(
+    private readonly client: HostingerClient,
+    private readonly domain: string
+  ) {}
+
+  upsertCname(input: DnsProvisionInput) {
+    return this.client.upsertCname(this.domain, input.hostname, input.target, input.ttl);
   }
 }

@@ -5,9 +5,10 @@ export interface ConsoleProject {
   description: string;
   status: "draft" | "local" | "preview" | "production" | "archived";
   providers: {
-    vercel: boolean;
-    supabase: boolean;
-    cloudflare: boolean;
+    deployment: string;
+    backend: string;
+    dns?: string;
+    mail?: string;
     designSystem: boolean;
   };
   urls: {

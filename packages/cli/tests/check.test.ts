@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { runCodexCheck } from "../src/check.js";
 
 const designSystem = {
-  source: "C:\\UI",
+  source: "../design-system",
   repository: "https://github.com/Paul-M-Kallarackal/design-system",
   commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
   packages: [
@@ -49,7 +49,7 @@ describe("Codex check", () => {
     );
 
     const results = await runCodexCheck(root);
-    expect(results.find((check) => check.id === "supabase:rls")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "backend:supabase:rls")?.ok).toBe(false);
   });
 
   it("requires the Hostinger magic-link route when mail is configured", async () => {

@@ -2,7 +2,11 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { saveDesignSystemCredentials, saveHostingerCredentials } from "../src/credentials.js";
+import {
+  saveCloudflareCredentials,
+  saveDesignSystemCredentials,
+  saveHostingerCredentials
+} from "../src/credentials.js";
 
 describe("saveHostingerCredentials", () => {
   it("writes Hostinger DNS and mail credentials", async () => {
@@ -50,16 +54,37 @@ describe("saveHostingerCredentials", () => {
   it("preserves Hostinger values when storing the private design-system key", async () => {
     const directory = await mkdtemp(join(tmpdir(), "vscd-design-system-credentials-"));
     const path = join(directory, "credentials.env");
+    const keyHeader = ["-----BEGIN", "OPENSSH PRIVATE KEY-----"].join(" ");
+    const keyFooter = ["-----END", "OPENSSH PRIVATE KEY-----"].join(" ");
     await saveHostingerCredentials({ token: "dns-token", domain: "moriatz.com", path });
     await saveDesignSystemCredentials({
-      deployKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nprivate-material\n-----END OPENSSH PRIVATE KEY-----",
+      deployKey: `${keyHeader}\ntest-material\n${keyFooter}`,
       commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
       path
     });
 
     const stored = await readFile(path, "utf8");
     expect(stored).toContain("HOSTINGER_API_TOKEN=dns-token");
-    expect(stored).toContain("DESIGN_SYSTEM_DEPLOY_KEY=-----BEGIN OPENSSH PRIVATE KEY-----\\nprivate-material");
+    expect(stored).toContain(`DESIGN_SYSTEM_DEPLOY_KEY=${keyHeader}\\ntest-material`);
     expect(stored).toContain("DESIGN_SYSTEM_COMMIT=fca3a35e26117f708000e8880e6c1fbabbfb3099");
+  });
+});
+
+describe("saveCloudflareCredentials", () => {
+  it("writes the zone-scoped DNS contract", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "vscd-cloudflare-"));
+    const path = join(directory, "credentials.env");
+
+    await saveCloudflareCredentials({
+      token: "cloudflare-test-token",
+      zoneId: "zone-id",
+      domain: "Example.COM",
+      path
+    });
+
+    const stored = await readFile(path, "utf8");
+    expect(stored).toContain("CLOUDFLARE_API_TOKEN=cloudflare-test-token");
+    expect(stored).toContain("CLOUDFLARE_ZONE_ID=zone-id");
+    expect(stored).toContain("CLOUDFLARE_DOMAIN=example.com");
   });
 });

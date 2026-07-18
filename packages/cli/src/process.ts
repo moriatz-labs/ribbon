@@ -11,7 +11,7 @@ function executable(name: string) {
     return name;
   }
 
-  if (["node", "git"].includes(name)) {
+  if (["node", "git", "hostinger"].includes(name)) {
     return `${name}.exe`;
   }
 

@@ -23,49 +23,52 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify application and design-system contract
-        run: pnpm check
+      - name: Verify application and provider contracts
+        run: pnpm prepare:design-system && pnpm lint && pnpm test
         env:
           DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
           DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
       - name: Pull Vercel settings
-        run: pnpm dlx vercel@50.28.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel@56.3.1 pull --yes --environment=production
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Build once
-        run: pnpm dlx vercel@50.28.0 build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel@56.3.1 build --prod
         env:
           DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
           DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Deploy the verified artifact
         id: deploy
         shell: bash
-        run: echo "url=$(pnpm dlx vercel@50.28.0 deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})" >> "$GITHUB_OUTPUT"
+        run: echo "url=$(pnpm dlx vercel@56.3.1 deploy --prebuilt --prod)" >> "$GITHUB_OUTPUT"
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Assign provisioned custom domain
         shell: bash
         run: |
-          domains="$(pnpm dlx vercel@50.28.0 api "/v9/projects/${VERCEL_PROJECT_ID}/domains" --raw --token=${{ secrets.VERCEL_TOKEN }})"
+          domains="$(pnpm dlx vercel@56.3.1 api "/v9/projects/${VERCEL_PROJECT_ID}/domains" --raw)"
           if jq -e --arg domain "__APP_DOMAIN__" '.domains[] | select(.name == $domain)' <<<"$domains" >/dev/null; then
             echo "__APP_DOMAIN__ is already assigned"
           else
-            pnpm dlx vercel@50.28.0 api "/v10/projects/${VERCEL_PROJECT_ID}/domains" -X POST -f name="__APP_DOMAIN__" --token=${{ secrets.VERCEL_TOKEN }}
+            pnpm dlx vercel@56.3.1 api "/v10/projects/${VERCEL_PROJECT_ID}/domains" -X POST -f name="__APP_DOMAIN__"
           fi
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Publish deployment URL
         run: |
-          printf '{"project":"__APP_SLUG__","url":"%s","commit":"%s"}\n' "${{ steps.deploy.outputs.url }}" "${{ github.sha }}" > deployment.json
+          printf '{"project":"__APP_SLUG__","url":"%s","commit":"%s","provider":"vercel"}\n' "${{ steps.deploy.outputs.url }}" "${{ github.sha }}" > deployment.json
           cat deployment.json >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: deployment-url
           path: deployment.json
           retention-days: 30
-

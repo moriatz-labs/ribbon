@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify application and provider contracts
+        run: pnpm prepare:design-system && pnpm lint && pnpm test
+        env:
+          DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+      - name: Build once
+        run: pnpm build
+        env:
+          DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      - name: Assign provisioned custom domain
+        shell: bash
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request PATCH \
+            --header "Authorization: Bearer ${NETLIFY_AUTH_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{"custom_domain":"__APP_DOMAIN__"}' \
+            "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}" >/dev/null
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Deploy the verified artifact
+        id: deploy
+        shell: bash
+        run: |
+          output="$(pnpm --package=netlify-cli@26.2.0 dlx netlify deploy --dir=dist --prod --no-build --site "$NETLIFY_SITE_ID" --json)"
+          echo "url=$(jq -r '.deploy_url // .url' <<<"$output")" >> "$GITHUB_OUTPUT"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Publish deployment URL
+        run: |
+          printf '{"project":"__APP_SLUG__","url":"%s","commit":"%s","provider":"netlify"}\n' "${{ steps.deploy.outputs.url }}" "${{ github.sha }}" > deployment.json
+          cat deployment.json >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deployment-url
+          path: deployment.json
+          retention-days: 30

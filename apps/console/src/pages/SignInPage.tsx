@@ -42,7 +42,7 @@ export function SignInPage() {
         </form>
         {message ? <p className="sign-in-message" role="status">{message}</p> : null}
       </section>
-      <p className="sign-in-foot">Vercel <span /> Supabase <span /> Cloudflare <span /> Design</p>
+      <p className="sign-in-foot">Deployment <span /> Backend <span /> DNS <span /> Design</p>
     </main>
   );
 }

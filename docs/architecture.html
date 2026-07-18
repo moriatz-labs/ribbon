@@ -11,19 +11,19 @@
 </head>
 <body>
   <main class="shell">
-    <header class="top"><div><span class="label">Technical architecture</span><h1>VSCD turns one request into a live project.</h1></div><p>Vercel runs the product. Supabase owns identity and data. Cloudflare owns DNS. Your design system keeps every interface recognizable.</p></header>
+    <header class="top"><div><span class="label">Technical architecture</span><h1>One product workflow. Swappable providers.</h1></div><p>The basic stack is Hostinger, Supabase, and Vercel. Capability adapters also support Cloudflare, Firebase, and Netlify without changing the product UI.</p></header>
     <section class="diagram">
       <div class="lane">
         <div class="runtime">
-          <div class="runtime-head"><div><span class="label">Runtime plane</span><h2>What happens when someone opens the app</h2></div><p>Cloudflare answers DNS without proxying Vercel. Supabase applies authorization at every row and object.</p></div>
-          <div class="track"><div class="node"><b>User</b><span>Browser and Supabase session</span></div><div class="arrow"></div><div class="node"><b>Cloudflare</b><span>Authoritative DNS, DNS-only</span></div><div class="arrow"></div><div class="node"><b>Vercel</b><span>Edge, static app, functions</span></div><div class="arrow"></div><div class="node"><b>Supabase</b><span>Auth, Postgres RLS, Storage</span></div></div>
+          <div class="runtime-head"><div><span class="label">Runtime plane</span><h2>Each capability has one selected adapter</h2></div><p>The manifest selects DNS, deployment, backend, and mail providers. The application UI talks only to stable capability contracts.</p></div>
+          <div class="track"><div class="node"><b>User</b><span>Browser and provider-neutral session</span></div><div class="arrow"></div><div class="node"><b>DNS adapter</b><span>Hostinger or Cloudflare</span></div><div class="arrow"></div><div class="node"><b>Deployment</b><span>Vercel or Netlify</span></div><div class="arrow"></div><div class="node"><b>Backend</b><span>Supabase or Firebase</span></div></div>
         </div>
         <aside class="control"><div class="control-card"><span class="label">Control plane</span><h3>Codex + VSCD CLI</h3><p>Scaffolds, checks, inventories, links, and records URLs without logging secret values.</p></div><div class="control-card"><span class="label">Build input</span><h3>Paul design system</h3><p>Tokens and patterns are compiled into the app. It is not a runtime dependency.</p></div><div class="control-card"><span class="label">Release authority</span><h3>GitHub Actions</h3><p>Builds once, deploys the prebuilt artifact, configures DNS, and returns the URL.</p></div></aside>
       </div>
       <div class="flow"><div class="step"><code>01</code><b>Ask</b></div><div class="step"><code>02</code><b>Scaffold</b></div><div class="step"><code>03</code><b>Codex check</b></div><div class="step"><code>04</code><b>Release</b></div><div class="step"><code>05</code><b>Return URLs</b></div></div>
     </section>
-    <section class="rules"><article class="rule"><h2>Security defaults</h2><ul><li>Publishable Supabase key in the browser</li><li>Owner-scoped RLS for every exposed table</li><li>Private storage with user-prefixed object paths</li><li>Zone-scoped Cloudflare token in CI only</li></ul></article><article class="rule"><h2>Speed defaults</h2><ul><li>Standalone Vite projects</li><li>Frozen pnpm lockfiles and cached downloads</li><li>One Vercel build, prebuilt deployment</li><li>Parallel, cached VSCD monorepo tasks</li></ul></article></section>
-    <p class="note"><strong>Compatibility rule:</strong> Cloudflare remains the DNS provider, but Vercel hostnames are not orange-cloud proxied. Vercel handles CDN, WAF, certificates, and bot signals.</p>
+    <section class="rules"><article class="rule"><h2>Security defaults</h2><ul><li>Only publishable provider configuration in the browser</li><li>Supabase RLS or owner-scoped Firebase rules</li><li>Private storage with user-prefixed object paths</li><li>DNS and deployment tokens stay outside application code</li></ul></article><article class="rule"><h2>Release defaults</h2><ul><li>Standalone Vite projects</li><li>Frozen pnpm lockfiles and cached downloads</li><li>One verified artifact per deployment</li><li>Provider-matched GitHub Actions workflow</li></ul></article></section>
+    <p class="note"><strong>Provisioning rule:</strong> Hostinger and Cloudflare use the same conflict-safe CNAME contract. The target comes from the selected Vercel or Netlify adapter, and Cloudflare routes remain DNS-only.</p>
   </main>
 </body>
 </html>

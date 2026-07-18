@@ -1,30 +1,32 @@
 {
   "$schema": "./schemas/vscd.schema.json",
+  "manifestVersion": 2,
   "name": "VSCD",
   "slug": "vscd",
   "description": "A reusable control plane and scaffold for side projects.",
   "framework": "vite-react",
   "projectType": "control-plane",
   "providers": {
-    "vercel": {
+    "deployment": {
+      "provider": "vercel",
       "projectName": "vscd-control",
       "projectId": "prj_gHWmI2t7jCEwgghpGi1Krk58087Z",
-      "teamId": "team_glj2kg2DPNA8NvVu6Um76AWA"
+      "teamId": "team_glj2kg2DPNA8NvVu6Um76AWA",
+      "cnameTarget": "cname.vercel-dns.com"
     },
-    "supabase": {
+    "backend": {
+      "provider": "supabase",
       "projectRef": "zjvsngbtlbyeumatvzlu",
       "region": "ap-south-1"
     },
-    "cloudflare": {
-      "proxied": false
-    },
-    "hostinger": {
+    "dns": {
+      "provider": "hostinger",
       "domain": "moriatz.com",
       "hostname": "vscd.moriatz.com",
       "ttl": 300
     },
     "designSystem": {
-      "source": "C:\\Users\\loqpm\\Desktop\\Paul\\design-system",
+      "source": "../../../design-system",
       "repository": "https://github.com/Paul-M-Kallarackal/design-system",
       "commit": "fca3a35e26117f708000e8880e6c1fbabbfb3099",
       "packages": [
@@ -40,7 +42,7 @@
   "urls": {
     "local": "http://localhost:4310",
     "production": "https://vscd-silk.vercel.app",
-    "supabase": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu",
+    "backend": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu",
     "repository": "https://github.com/Paul-M-Kallarackal/VSCD"
   },
   "status": "production"

@@ -2,122 +2,86 @@
 
 ## Goals
 
-VSCD turns a short product request into a repeatable project lifecycle: scaffold, implement, check, release, register, and return URLs. It is optimized for roughly ten independent hobby projects that share an owner and design language but should not share failure domains or provider quotas.
+VSCD turns a product request into a repeatable lifecycle: select a provider profile, scaffold, implement, check, release, register, and return URLs. Products remain independent repositories and do not share provider failure domains.
 
-## Non-Goals
+The basic profile is Hostinger DNS + Supabase + Vercel. It is a default, not a hard-coded architecture.
 
-- VSCD is not a Kubernetes platform or a general-purpose infrastructure orchestrator.
-- It does not put a long-running backend on Vercel. Generated apps use browser-to-Supabase CRUD plus short serverless endpoints for trusted operations.
-- It does not scrape or proxy third-party services from Cloudflare.
-- It never stores raw provider secrets in `vscd.json`, the registry table, or browser storage.
+## Capability Model
+
+`vscd.json` version 2 has four operational slots:
+
+- `providers.dns`: `hostinger` or `cloudflare`;
+- `providers.backend`: `supabase` or `firebase`;
+- `providers.deployment`: `vercel` or `netlify`;
+- `providers.mail`: `hostinger-mail` or `backend`.
+
+`providers.designSystem` remains a required build capability. Provider IDs and project references are metadata; credentials are environment contracts.
+
+The Zod parser normalizes legacy provider-named manifests. The public JSON Schema describes the canonical version 2 format written by every new scaffold.
 
 ## Implementation Status
 
 | Capability | Implementation |
 |---|---|
-| Project manifest | `vscd.json` validated by Zod and JSON Schema |
-| Local registry | Atomic JSON registry at `%USERPROFILE%\.vscd\registry.json` |
-| Remote registry | Supabase `vscd_projects` table with owner-only RLS |
-| Environment audit | `vscd doctor` checks CLIs and authenticated sessions |
-| Provider inventory | `vscd inventory` reads Supabase and Vercel accounts |
-| Project generation | `vscd init` copies and parameterizes `templates/crud-app` |
-| Codex gate | `vscd check` validates files, lockfile, RLS, tests, secrets, DNS mode, workflows |
-| Vercel integration | REST client plus pinned CLI workflow using prebuilt deployments |
-| Supabase integration | Management API client, migrations, Auth, Storage, and pgTAP tests |
-| Cloudflare integration | Idempotent CNAME upsert with `proxied: false` |
-| Design system | Tokens, typography, layout, icon, and responsive rules embedded in template |
-| URL handoff | GitHub workflow emits `deployment.json`; registry command lists known URLs |
+| Provider catalog | Capability descriptors, required environment, and common DNS contract |
+| Manifest | Version 2 discriminated provider slots plus legacy read normalization |
+| DNS | Conflict-safe Hostinger and DNS-only Cloudflare CNAME adapters |
+| Backend | Provider-neutral React boundary with Supabase and Firebase implementations |
+| Backend policy | Supabase migrations/RLS/SQL tests or Firebase Firestore/Storage rules |
+| Deployment | Provider-specific Vercel and Netlify GitHub Actions templates |
+| Scaffold | Full DNS × backend × deployment selection matrix |
+| Doctor | Selected CLI and authentication profile checks |
+| Inventory | Vercel, Netlify, Supabase, Firebase, Hostinger, and Cloudflare state |
+| Release gate | Provider-specific DNS, backend-policy, secret, design-system, and workflow checks |
+| Registry | Atomic local JSON plus owner-scoped remote registry |
 
-## Manifest Contract
-
-Every project contains a `vscd.json` manifest with stable identity, provider references, URLs, status, and design-system source. Provider IDs are metadata, not credentials. Cloudflare's `proxied` field is a literal `false`, so invalid runtime topology is rejected before release.
-
-State transitions are monotonic in normal operation:
-
-```text
-draft -> local -> preview -> production -> archived
-```
-
-Rollback changes a deployment alias or project URL but does not rewrite the project's creation history.
-
-## Supabase Schema Rules
-
-1. Every table in an exposed schema enables RLS in the same migration that creates the table.
-2. Every policy specifies a target role with `TO authenticated` or `TO anon`.
-3. Ownership policies use `(select auth.uid()) = owner_id` and index `owner_id`.
-4. Update policies include both `USING` and `WITH CHECK`; a matching select policy exists.
-5. Authorization data lives in `app_metadata`, never user-editable `user_metadata`.
-6. Views exposed to users use `security_invoker = true`; privileged functions stay outside exposed schemas.
-7. Service-role and secret keys never enter browser-prefixed environment variables.
-8. Storage buckets default to private. Object policies constrain the first path segment to the authenticated user ID.
-9. SQL tests cover RLS enabled state, policy count, owner access, cross-user denial, anonymous denial, and storage privacy.
-10. `supabase db advisors` runs before a production schema release when a linked project is available.
-
-## Provider APIs
-
-### Vercel
-
-Use the CLI for project linking, environment pulls, builds, inspection, and promotion. Use the REST API for inventory and control-plane views. CI pins Vercel CLI `50.28.0`; it pulls production settings, builds once, and deploys with `--prebuilt`.
-
-Required CI secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+## Backend Rules
 
 ### Supabase
 
-Use Supabase CLI for local development, migrations, type generation, tests, and project linking. Use the Management API for inventory and opt-in provisioning. Personal automation uses a PAT; third-party delegated automation must use OAuth2.
+Every exposed table enables RLS in its creating migration. Policies name target roles, constrain ownership, and include both `USING` and `WITH CHECK` for updates. Data API grants are explicit. Storage is private and paths begin with the authenticated user ID. SQL tests cover anonymous, owner, and cross-user behavior.
 
-Required public variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
+The browser receives only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Service-role and management credentials remain server-side.
 
-Required provisioning secret: `SUPABASE_ACCESS_TOKEN`. A generated database password is passed directly to the create-project call and is never persisted by VSCD.
+### Firebase
 
-### Cloudflare
+The browser backend adapter uses Firebase Auth, Firestore, and Cloud Storage. `firestore.rules` requires `owner_id == request.auth.uid` for creates and existing/new ownership for updates. `storage.rules` constrains the first attachment path segment to the authenticated user ID.
 
-Use REST API tokens, not the Global API key. The default token has only zone read and DNS edit permissions for the selected zone. DNS upserts first query by type and name, then `PATCH` an existing record or `POST` a new one. Vercel CNAME records always set `ttl: 1` and `proxied: false`.
+Firebase web configuration is publishable. Admin SDK credentials, service-account JSON, and deployment tokens are never browser variables or manifest values.
 
-Required secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`. `CUSTOM_DOMAIN` is a GitHub Actions variable, not a secret.
+## DNS Rules
 
-## Build And Deploy Performance
+Both DNS adapters normalize hostnames, use the deployment adapter's CNAME target, and refuse to overwrite `A`, `AAAA`, `ALIAS`, or other conflicting records.
 
-Generated side projects are deliberately standalone Vite apps. A single app does not pay the complexity cost of a monorepo or Turborepo. Fast release comes from a frozen pnpm lockfile, GitHub's pnpm download cache, one TypeScript/Vite build, and a Vercel prebuilt upload.
+Hostinger validates the proposed record before updating its zone. Cloudflare uses a zone-scoped API token and always writes `proxied: false`; direct Vercel and Netlify routes are not silently placed behind the Cloudflare proxy.
 
-VSCD itself is a monorepo because the console, CLI, and core package share code. Turborepo runs independent tasks in parallel and caches declared `dist/**` outputs. Vercel automatically skips unchanged workspace projects when the repository is connected through GitHub. Remote cache inputs include only environment values that affect the app build, preserving useful cache hits.
+## Deployment Rules
 
-Performance rules:
+The Vercel workflow pins CLI `56.3.1`, pulls production settings, builds once, deploys the prebuilt artifact, and assigns the custom domain. Required secrets are `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
 
-- Pin Node, pnpm, Supabase CLI, and Vercel CLI versions in CI.
-- Use `pnpm install --frozen-lockfile`.
-- Cancel superseded CI and production runs with workflow concurrency.
-- Build once, test the artifact, and deploy with `--prebuilt`; never rebuild the same commit for promotion.
-- Keep environment variables scoped to the tasks that consume them.
-- Cache package-manager downloads, not `node_modules` or secrets.
-- Keep Vite output static where possible; use Vercel Functions only for trusted operations.
-- Do not use an ignored-build script when Vercel can skip unaffected workspace projects without consuming a build slot.
+The Netlify workflow pins CLI `26.2.0`, builds once with the selected backend's public variables supplied by GitHub, assigns the custom domain through the site API, deploys `dist` with `--no-build`, and publishes the returned URL. Required deployment secrets are `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID`; the selected backend's `VITE_*` values are also configured in the GitHub production environment.
 
-## Codex Check
+Both workflows use frozen lockfile installs, cancel superseded runs, keep credentials step-scoped, and upload `deployment.json`.
 
-`vscd check` is a deterministic release precondition. It fails when:
+## Release Gate
 
-- `package.json`, `.env.example`, `vscd.json`, a single lockfile, or GitHub Actions are missing;
-- the manifest enables Cloudflare proxying for a Vercel hostname;
-- browser source references a service-role, Cloudflare, or Vercel secret;
-- a created public table lacks `ENABLE ROW LEVEL SECURITY`;
-- no Supabase SQL tests exist.
+`vscd check` fails when the manifest, one lockfile, environment contract, design-system pin, or selected release workflow is missing. It also fails on:
 
-Product-specific checks still run through each repository's normal test, lint, typecheck, and build commands.
+- an incomplete DNS configuration or proxied Cloudflare route;
+- a browser-prefixed admin, DNS, mail, or deployment secret;
+- missing Supabase RLS or SQL tests;
+- missing owner-scoped Firebase rules or `firebase.json`;
+- a workflow that does not match the selected deployment provider;
+- a design-system bypass or native date input.
+
+Product lint, tests, typecheck, build, and provider policy tests remain separate required evidence.
 
 ## Failure And Recovery
 
-- Provider provisioning is idempotent where possible. Inventory runs before create operations.
-- A failed DNS update leaves the Vercel deployment URL usable and reports the custom-domain step separately.
-- A failed production deployment does not modify the Cloudflare record.
-- Database migrations complete before a deployment is promoted. Destructive migrations require an explicit rollback plan.
-- Provider URLs are recorded only after the corresponding API reports success.
+- DNS updates are idempotent and leave the provider deployment URL usable when custom-domain work fails.
+- Provider metadata is recorded only after the provider reports success.
+- A failed deployment does not mutate the already provisioned CNAME.
+- Backend migrations or rule deployments precede production promotion.
+- Switching an adapter is a manifest and generated-provider change reviewed as one unit; editing only a workflow or import is invalid.
 
-## Rollout
-
-1. Use VSCD locally to scaffold and validate People Aggregator.
-2. Create a dedicated Supabase project for the VSCD registry and apply the root migration.
-3. Create a Vercel project for `apps/console`, configure public Supabase variables, and protect the GitHub production environment.
-4. Add a narrowly scoped Cloudflare token and zone ID to GitHub Actions.
-5. Connect a custom DNS-only hostname and verify Vercel certificate issuance.
-6. Register People Aggregator and return its preview/production URLs.
-
+See [Provider architecture](provider-architecture.md) for the adapter extension checklist.

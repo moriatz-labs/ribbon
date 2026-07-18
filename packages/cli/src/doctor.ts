@@ -1,3 +1,4 @@
+import { getProviderDefinition } from "@vscd/core";
 import { runCommand } from "./process.js";
 
 interface DoctorCheck {
@@ -7,68 +8,77 @@ interface DoctorCheck {
   required: boolean;
 }
 
+export interface DoctorProfile {
+  dns: "hostinger" | "cloudflare";
+  backend: "supabase" | "firebase";
+  deployment: "vercel" | "netlify";
+}
+
 async function commandCheck(name: string, args: string[], required = true): Promise<DoctorCheck> {
   const result = await runCommand(name, args);
   return {
-    name,
+    name: `${name} CLI`,
     ok: result.code === 0,
     detail: result.stdout.split(/\r?\n/)[0] || result.stderr.split(/\r?\n/)[0] || "not found",
     required
   };
 }
 
-export async function runDoctor() {
+function environmentCheck(name: string, variables: readonly string[], required: boolean): DoctorCheck {
+  const missing = variables.filter((variable) => !process.env[variable]);
+  return {
+    name,
+    ok: missing.length === 0,
+    detail: missing.length === 0 ? "configured" : `missing ${missing.join(", ")}`,
+    required
+  };
+}
+
+export async function runDoctor(profile: DoctorProfile = {
+  dns: "hostinger",
+  backend: "supabase",
+  deployment: "vercel"
+}) {
+  const deploymentCli = profile.deployment === "vercel" ? "vercel" : "netlify";
+  const backendCli = profile.backend === "supabase" ? "supabase" : "firebase";
   const checks = await Promise.all([
     commandCheck("node", ["--version"]),
     commandCheck("pnpm", ["--version"]),
     commandCheck("git", ["--version"]),
-    commandCheck("vercel", ["--version"]),
-    commandCheck("supabase", ["--version"]),
-    commandCheck("hostinger", ["version"], false)
+    commandCheck(deploymentCli, ["--version"]),
+    commandCheck(backendCli, ["--version"])
   ]);
 
-  const [vercelAuth, supabaseAuth] = await Promise.all([
-    runCommand("vercel", ["whoami"]),
-    runCommand("supabase", ["projects", "list", "--output", "json"])
-  ]);
+  const deploymentAuth = profile.deployment === "vercel"
+    ? await runCommand("vercel", ["whoami"])
+    : await runCommand("netlify", ["status", "--json"]);
+  const backendAuth = profile.backend === "supabase"
+    ? await runCommand("supabase", ["projects", "list", "--output", "json"])
+    : await runCommand("firebase", ["projects:list", "--json"]);
 
   checks.push(
     {
-      name: "Vercel authentication",
-      ok: vercelAuth.code === 0,
-      detail: vercelAuth.stdout || vercelAuth.stderr || "not authenticated",
+      name: `${getProviderDefinition("deployment", profile.deployment).displayName} authentication`,
+      ok: deploymentAuth.code === 0,
+      detail: deploymentAuth.code === 0 ? "authenticated" : deploymentAuth.stderr || "not authenticated",
       required: true
     },
     {
-      name: "Supabase authentication",
-      ok: supabaseAuth.code === 0 && supabaseAuth.stdout.includes("["),
-      detail: supabaseAuth.code === 0 ? "authenticated" : supabaseAuth.stderr || "not authenticated",
+      name: `${getProviderDefinition("backend", profile.backend).displayName} authentication`,
+      ok: backendAuth.code === 0,
+      detail: backendAuth.code === 0 ? "authenticated" : backendAuth.stderr || "not authenticated",
       required: true
     },
-    {
-      name: "Cloudflare API token",
-      ok: Boolean(process.env.CLOUDFLARE_API_TOKEN),
-      detail: process.env.CLOUDFLARE_API_TOKEN ? "present" : "missing; DNS writes stay disabled",
-      required: false
-    },
-    {
-      name: "Cloudflare zone ID",
-      ok: Boolean(process.env.CLOUDFLARE_ZONE_ID),
-      detail: process.env.CLOUDFLARE_ZONE_ID ? "present" : "missing; domain linking stays disabled",
-      required: false
-    },
-    {
-      name: "Hostinger API token",
-      ok: Boolean(process.env.HOSTINGER_API_TOKEN),
-      detail: process.env.HOSTINGER_API_TOKEN ? "present" : "missing; Hostinger DNS writes stay disabled",
-      required: false
-    },
-    {
-      name: "Hostinger domain",
-      ok: Boolean(process.env.HOSTINGER_DOMAIN),
-      detail: process.env.HOSTINGER_DOMAIN ?? "missing; automatic subdomains stay disabled",
-      required: false
-    },
+    environmentCheck(
+      `${getProviderDefinition("dns", profile.dns).displayName} credentials`,
+      getProviderDefinition("dns", profile.dns).requiredEnvironment,
+      false
+    ),
+    environmentCheck(
+      `${getProviderDefinition("deployment", profile.deployment).displayName} CI contract`,
+      getProviderDefinition("deployment", profile.deployment).requiredEnvironment,
+      false
+    ),
     {
       name: "Hostinger mail",
       ok: Boolean(
@@ -80,7 +90,7 @@ export async function runDoctor() {
         && process.env.HOSTINGER_MAILBOX_ID
         && process.env.HOSTINGER_MAIL_FROM
         ? "mail API token, mailbox, and sender present"
-        : "missing; generated apps require manual Hostinger mail environment setup",
+        : "optional; backend-managed auth email remains available",
       required: false
     },
     {
@@ -102,8 +112,8 @@ export async function runDoctor() {
   );
 
   return {
+    profile,
     ok: checks.every((check) => check.ok || !check.required),
     checks
   };
 }
-

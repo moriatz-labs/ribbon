@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import type { Session } from "@supabase/supabase-js";
 import {
   Alert,
   Box,
@@ -17,27 +16,19 @@ import {
   TextStyle,
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
+  TooltipTrigger
 } from "@paul/ui-core";
 import { LogOutIcon, PlusIcon, TrashIcon } from "@paul/ui-icons";
 import { DatePicker } from "@paul/ui-patterns";
-import { supabase } from "./lib/supabase";
-
-interface RecordItem {
-  id: string;
-  title: string;
-  body: string;
-  due_date: string | null;
-  attachment_path: string | null;
-  updated_at: string;
-}
+import { backend } from "./lib/backend";
+import type { BackendSession, RecordItem } from "./lib/backend";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
 }
 
 export function App() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<BackendSession | null>(null);
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -46,16 +37,10 @@ export function App() {
   const [message, setMessage] = useState<string | null>(null);
 
   async function loadItems() {
-    const { data, error } = await supabase.from("items").select("*").order("updated_at", { ascending: false });
-    if (error) throw error;
-    setItems(data ?? []);
+    setItems(await backend.listItems());
   }
 
-  useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
-    return () => data.subscription.unsubscribe();
-  }, []);
+  useEffect(() => backend.subscribeSession(setSession), []);
 
   useEffect(() => {
     if (session) void loadItems().catch((error: Error) => setMessage(error.message));
@@ -64,13 +49,7 @@ export function App() {
   async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      const response = await fetch("/api/auth/magic-link", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "The sign-in link could not be sent.");
+      await backend.sendMagicLink(email);
       setMessage("Check your email for the sign-in link.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "The sign-in link could not be sent.");
@@ -79,13 +58,16 @@ export function App() {
 
   async function addItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const { error } = await supabase.from("items").insert({ title, body, due_date: dueDate || null });
-    if (error) return setMessage(error.message);
-    setTitle("");
-    setBody("");
-    setDueDate("");
-    setMessage(null);
-    await loadItems();
+    try {
+      await backend.createItem({ title, body, due_date: dueDate || null });
+      setTitle("");
+      setBody("");
+      setDueDate("");
+      setMessage(null);
+      await loadItems();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The record could not be saved.");
+    }
   }
 
   if (!session) {
@@ -101,17 +83,7 @@ export function App() {
               </Stack>
               <form onSubmit={sendMagicLink}>
                 <Stack gap="$4">
-                  <TextField
-                    autoComplete="email"
-                    inputMode="email"
-                    label="Email address"
-                    name="email"
-                    onChange={(event) => setEmail(event.currentTarget.value)}
-                    required
-                    spellCheck={false}
-                    type="email"
-                    value={email}
-                  />
+                  <TextField autoComplete="email" inputMode="email" label="Email address" name="email" onChange={(event) => setEmail(event.currentTarget.value)} required spellCheck={false} type="email" value={email} />
                   <Button type="submit">Send sign-in link</Button>
                 </Stack>
               </form>
@@ -135,13 +107,7 @@ export function App() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <IconButton
-                    icon={<LogOutIcon width={18} height={18} />}
-                    label="Sign out"
-                    variant="outline"
-                    onClick={() => void supabase.auth.signOut()}
-                    type="button"
-                  />
+                  <IconButton icon={<LogOutIcon width={18} height={18} />} label="Sign out" variant="outline" onClick={() => void backend.signOut()} type="button" />
                 </span>
               </TooltipTrigger>
               <TooltipContent>Sign out</TooltipContent>
@@ -153,9 +119,7 @@ export function App() {
               <Stack gap="$2">
                 <TextStyle textStyle="eyebrow" tone="muted">New record</TextStyle>
                 <TextStyle as="h2" id="new-record-heading" textStyle="headingSm">Capture something useful</TextStyle>
-                <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>
-                  Use Paul’s components as the default building blocks for every generated product.
-                </Text>
+                <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>Use Paul&apos;s components as the default building blocks for every generated product.</Text>
               </Stack>
               <form onSubmit={addItem}>
                 <Stack gap="$4">
@@ -194,12 +158,12 @@ export function App() {
                       onChange={async (event) => {
                         const file = event.currentTarget.files?.[0];
                         if (!file) return;
-                        const path = `${session.user.id}/${item.id}/${file.name}`;
-                        const upload = await supabase.storage.from("attachments").upload(path, file, { upsert: true });
-                        if (upload.error) return setMessage(upload.error.message);
-                        const update = await supabase.from("items").update({ attachment_path: path }).eq("id", item.id);
-                        if (update.error) return setMessage(update.error.message);
-                        await loadItems();
+                        try {
+                          await backend.uploadAttachment(session, item.id, file);
+                          await loadItems();
+                        } catch (error) {
+                          setMessage(error instanceof Error ? error.message : "The attachment could not be uploaded.");
+                        }
                       }}
                     />
                     <Flex justifyContent="flex-end">
@@ -214,9 +178,12 @@ export function App() {
                               type="button"
                               onClick={async () => {
                                 if (!window.confirm(`Delete ${item.title}?`)) return;
-                                const { error } = await supabase.from("items").delete().eq("id", item.id);
-                                if (error) return setMessage(error.message);
-                                await loadItems();
+                                try {
+                                  await backend.deleteItem(item.id);
+                                  await loadItems();
+                                } catch (error) {
+                                  setMessage(error instanceof Error ? error.message : "The record could not be deleted.");
+                                }
                               }}
                             />
                           </span>

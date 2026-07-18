@@ -1,24 +1,26 @@
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { readRegistry, upsertProject, type ProjectManifest } from "../src/index.js";
+import { projectManifestSchema, readRegistry, upsertProject, type ProjectManifest } from "../src/index.js";
 
 const project: ProjectManifest = {
   name: "Example",
   slug: "example",
   description: "Test project",
   framework: "vite-react",
+  manifestVersion: 2,
   providers: {
-    vercel: {},
-    supabase: {},
-    hostinger: {
+    deployment: { provider: "vercel", cnameTarget: "cname.vercel-dns.com" },
+    backend: { provider: "supabase" },
+    dns: {
+      provider: "hostinger",
       domain: "moriatz.com",
       hostname: "example.moriatz.com",
       ttl: 300
     },
     designSystem: {
-      source: "C:\\design-system",
+      source: "../design-system",
       repository: "https://github.com/Paul-M-Kallarackal/design-system",
       commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
       packages: [
@@ -58,8 +60,12 @@ describe("registry", () => {
         ...project,
         providers: {
           ...project.providers,
-          hostinger: undefined,
-          cloudflare: { proxied: true as false }
+          dns: {
+            provider: "cloudflare",
+            domain: "moriatz.com",
+            hostname: "example.moriatz.com",
+            proxied: true as false
+          }
         }
       })
     ).rejects.toThrow();
@@ -74,7 +80,8 @@ describe("registry", () => {
         ...project,
         providers: {
           ...project.providers,
-          hostinger: {
+          dns: {
+            provider: "hostinger",
             domain: "moriatz.com",
             hostname: "example.net",
             ttl: 300
@@ -82,6 +89,23 @@ describe("registry", () => {
         }
       })
     ).rejects.toThrow("Hostinger hostname must be a subdomain");
+  });
+
+  it("rejects machine-specific design-system paths", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+
+    await expect(
+      upsertProject(join(directory, "registry.json"), {
+        ...project,
+        providers: {
+          ...project.providers,
+          designSystem: {
+            ...project.providers.designSystem,
+            source: resolve("design-system")
+          }
+        }
+      })
+    ).rejects.toThrow("relative to the project repository");
   });
 
   it("does not allow generated apps to claim the control-plane exemption", async () => {
@@ -93,6 +117,29 @@ describe("registry", () => {
         projectType: "control-plane"
       })
     ).rejects.toThrow("Only the VSCD repository");
+  });
+
+  it("normalizes legacy provider-named manifests into capability slots", () => {
+    const legacy = projectManifestSchema.parse({
+      ...project,
+      manifestVersion: undefined,
+      providers: {
+        vercel: { projectName: "example" },
+        supabase: { projectRef: "project-ref" },
+        cloudflare: {
+          zoneId: "zone-id",
+          domain: "moriatz.com",
+          hostname: "example.moriatz.com",
+          proxied: false
+        },
+        designSystem: project.providers.designSystem
+      }
+    });
+
+    expect(legacy.manifestVersion).toBe(2);
+    expect(legacy.providers.deployment.provider).toBe("vercel");
+    expect(legacy.providers.backend.provider).toBe("supabase");
+    expect(legacy.providers.dns?.provider).toBe("cloudflare");
   });
 });
 

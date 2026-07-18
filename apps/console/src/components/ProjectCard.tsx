@@ -1,14 +1,11 @@
-import { Check, Copy, ExternalLink, Minus } from "lucide-react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import type { ConsoleProject } from "../types";
 import { IconButton } from "./IconButton";
 
-const providerLabels: Array<[keyof ConsoleProject["providers"], string]> = [
-  ["vercel", "Vercel"],
-  ["supabase", "Supabase"],
-  ["cloudflare", "Cloudflare"],
-  ["designSystem", "Design"]
-];
+function label(value: string) {
+  return value.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
 
 export function ProjectCard({ project }: { project: ConsoleProject }) {
   const [copied, setCopied] = useState(false);
@@ -45,10 +42,16 @@ export function ProjectCard({ project }: { project: ConsoleProject }) {
       <p className="project-description">{project.description}</p>
 
       <div className="provider-list" aria-label="Provider connections">
-        {providerLabels.map(([key, label]) => (
-          <span className={project.providers[key] ? "provider connected" : "provider"} key={key}>
-            {project.providers[key] ? <Check aria-hidden="true" size={13} /> : <Minus aria-hidden="true" size={13} />}
-            {label}
+        {[
+          project.providers.dns,
+          project.providers.deployment,
+          project.providers.backend,
+          project.providers.mail,
+          project.providers.designSystem ? "design-system" : undefined
+        ].filter((provider): provider is string => Boolean(provider)).map((provider) => (
+          <span className="provider connected" key={provider}>
+            <Check aria-hidden="true" size={13} />
+            {label(provider)}
           </span>
         ))}
       </div>

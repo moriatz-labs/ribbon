@@ -57,7 +57,7 @@ export function DashboardPage({ userEmail, onSignOut }: DashboardPageProps) {
           <div>
             <p className="eyebrow">Control plane</p>
             <h1>Every side project, in one place.</h1>
-            <p>Provider state, release readiness, and the URL you actually need.</p>
+            <p>Composable provider stacks, release readiness, and the URL you actually need.</p>
           </div>
           <div className="header-action">
             <IconButton icon={RefreshCw} label="Refresh projects" onClick={() => void refresh()} disabled={loading} />
@@ -99,8 +99,8 @@ export function DashboardPage({ userEmail, onSignOut }: DashboardPageProps) {
           </div>
           <ol>
             <li><span>1</span><div><strong>Build</strong><p>Codex applies the scaffold and your design system.</p></div></li>
-            <li><span>2</span><div><strong>Check</strong><p>Types, tests, secrets, RLS, and release policy are verified.</p></div></li>
-            <li><span>3</span><div><strong>Release</strong><p>GitHub Actions creates the Vercel deployment and records its URL.</p></div></li>
+            <li><span>2</span><div><strong>Check</strong><p>Types, tests, secrets, provider security rules, and release policy are verified.</p></div></li>
+            <li><span>3</span><div><strong>Release</strong><p>GitHub Actions uses the selected deployment adapter and records its URL.</p></div></li>
           </ol>
         </section>
       </main>

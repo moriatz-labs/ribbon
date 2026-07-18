@@ -14,15 +14,15 @@
     "types": ["vite/client", "node"],
     "paths": {
       "@paul/ui-core": [
-        "../design-system/packages/ui_core/src/index.ts",
+        "__DESIGN_SYSTEM_SOURCE__/packages/ui_core/src/index.ts",
         ".vercel-design-system/packages/ui_core/src/index.ts"
       ],
       "@paul/ui-icons": [
-        "../design-system/packages/ui_icons/src/index.ts",
+        "__DESIGN_SYSTEM_SOURCE__/packages/ui_icons/src/index.ts",
         ".vercel-design-system/packages/ui_icons/src/index.ts"
       ],
       "@paul/ui-patterns": [
-        "../design-system/packages/ui_patterns/src/index.tsx",
+        "__DESIGN_SYSTEM_SOURCE__/packages/ui_patterns/src/index.tsx",
         ".vercel-design-system/packages/ui_patterns/src/index.tsx"
       ]
     }

@@ -9,9 +9,9 @@ export const localProjects: ConsoleProject[] = [
     description: "Control plane, scaffolding, provider automation, and release checks.",
     status: "production",
     providers: {
-      vercel: true,
-      supabase: true,
-      cloudflare: false,
+      deployment: "vercel",
+      backend: "supabase",
+      dns: "hostinger",
       designSystem: true
     },
     urls: {
@@ -27,13 +27,13 @@ export const localProjects: ConsoleProject[] = [
     description: "Editable, evidence-backed people cards and enrichment pipeline.",
     status: "production",
     providers: {
-      vercel: true,
-      supabase: true,
-      cloudflare: false,
+      deployment: "vercel",
+      backend: "supabase",
+      dns: "hostinger",
       designSystem: true
     },
     urls: {
-      production: "https://people-aggregator.vercel.app",
+      production: "https://people.moriatz.com",
       repository: "https://github.com/Paul-M-Kallarackal/people-aggregator"
     },
     updatedAt: "2026-07-15T00:00:00.000Z"
@@ -46,9 +46,33 @@ interface ProjectRow {
   slug: string;
   description: string | null;
   status: ConsoleProject["status"];
-  providers: ConsoleProject["providers"];
+  providers: Record<string, unknown>;
   urls: ConsoleProject["urls"];
   updated_at: string;
+}
+
+function providerName(value: unknown) {
+  return value && typeof value === "object" && "provider" in value
+    && typeof (value as { provider?: unknown }).provider === "string"
+    ? (value as { provider: string }).provider
+    : undefined;
+}
+
+function normalizeProviders(providers: Record<string, unknown>): ConsoleProject["providers"] {
+  const deployment = providerName(providers.deployment)
+    ?? (providers.vercel ? "vercel" : providers.netlify ? "netlify" : "unconfigured");
+  const backend = providerName(providers.backend)
+    ?? (providers.supabase ? "supabase" : providers.firebase ? "firebase" : "unconfigured");
+  const dns = providerName(providers.dns)
+    ?? (providers.hostinger ? "hostinger" : providers.cloudflare ? "cloudflare" : undefined);
+  const mail = providerName(providers.mail);
+  return {
+    deployment,
+    backend,
+    dns,
+    mail,
+    designSystem: Boolean(providers.designSystem)
+  };
 }
 
 export async function loadProjects(): Promise<ConsoleProject[]> {
@@ -71,7 +95,7 @@ export async function loadProjects(): Promise<ConsoleProject[]> {
     slug: project.slug,
     description: project.description ?? "",
     status: project.status,
-    providers: project.providers,
+    providers: normalizeProviders(project.providers),
     urls: project.urls,
     updatedAt: project.updated_at
   }));
