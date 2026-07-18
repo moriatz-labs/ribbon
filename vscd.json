@@ -28,7 +28,7 @@
     "designSystem": {
       "source": "../../../design-system",
       "repository": "https://github.com/Paul-M-Kallarackal/design-system",
-      "commit": "4a488a815da102a547254ee16d1b4fabd741857b",
+      "commit": "5a18eed8d93911109b5ab13820c494e259972e13",
       "packages": [
         "@paul/ui-core",
         "@paul/ui-icons",

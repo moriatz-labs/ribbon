@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vite build",
+    "build": "pnpm typecheck && vite build",
     "dev": "vite",
-    "lint": "tsc -b --noEmit",
+    "lint": "pnpm typecheck",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",

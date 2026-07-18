@@ -3,6 +3,8 @@ dist/
 .turbo/
 .vite/
 .vercel/
+.vercel-design-system/
+.vercel-design-system-ssh/
 .env
 .env.local
 .env.*.local
