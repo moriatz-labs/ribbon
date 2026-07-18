@@ -1,21 +1,66 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { isAbsolute, join, resolve } from "node:path";
+import { extname, isAbsolute, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { projectManifestSchema, readRegistry, upsertProject } from "@vscd/core";
+import {
+  getProviderDefinition,
+  listProviderDefinitions,
+  projectManifestSchema,
+  readRegistry,
+  upsertProject,
+  type ProviderCapability,
+  type ProjectManifest
+} from "@vscd/core";
 import { runCodexCheck } from "./check.js";
-import { loadVscdCredentials, saveDesignSystemCredentials, saveHostingerCredentials } from "./credentials.js";
-import { DEFAULT_VERCEL_CNAME_TARGET, provisionHostingerCname } from "./dns.js";
+import {
+  loadVscdCredentials,
+  saveCloudflareCredentials,
+  saveDesignSystemCredentials,
+  saveHostingerCredentials
+} from "./credentials.js";
+import { provisionDnsCname } from "./dns.js";
 import { runDoctor } from "./doctor.js";
 import { collectInventory } from "./inventory.js";
-import { scaffoldProject } from "./scaffold.js";
+import { DEFAULT_STACK, scaffoldProject } from "./scaffold.js";
 
 const registryPath = process.env.VSCD_REGISTRY_PATH ?? join(homedir(), ".vscd", "registry.json");
 const credentialsPath = loadVscdCredentials();
 
 function printHelp() {
-  console.log(`VSCD\n\nCommands:\n  doctor\n  auth hostinger\n  auth design-system\n  inventory [--json]\n  init <slug> [--title <name>] [--target <path>] [--domain <domain>] [--no-domain]\n  dns <subdomain> [--domain <domain>] [--target <hostname>]\n  check [project-path] [--json]\n  register <manifest-path>\n  urls\n`);
+  console.log(`VSCD
+
+Default stack: Hostinger DNS + Supabase + Vercel
+
+Commands:
+  providers [--json]
+  doctor [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>]
+  auth <hostinger|cloudflare|design-system>
+  inventory [--json]
+  init <slug> [--title <name>] [--target <path>] [--domain <domain>] [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>] [--no-domain]
+  dns [project-path] [--target <hostname>]
+  check [project-path] [--json]
+  register <manifest-path>
+  urls
+`);
+}
+
+function providerId<T extends ProviderCapability>(
+  capability: T,
+  value: string | undefined,
+  fallback: string
+) {
+  const id = value ?? fallback;
+  getProviderDefinition(capability, id);
+  return id;
+}
+
+async function readProjectManifest(path = "."): Promise<ProjectManifest> {
+  const absolute = isAbsolute(path) ? path : resolve(path);
+  const manifestPath = extname(absolute).toLowerCase() === ".json"
+    ? absolute
+    : join(absolute, "vscd.json");
+  return projectManifestSchema.parse(JSON.parse(await readFile(manifestPath, "utf8")));
 }
 
 async function main() {
@@ -28,7 +73,10 @@ async function main() {
       "no-domain": { type: "boolean", default: false },
       target: { type: "string" },
       title: { type: "string" },
-      cname: { type: "string" }
+      "dns-provider": { type: "string" },
+      "backend-provider": { type: "string" },
+      "deployment-provider": { type: "string" },
+      "mail-provider": { type: "string" }
     }
   });
   const [command, firstArgument] = positionals;
@@ -38,8 +86,25 @@ async function main() {
     return;
   }
 
+  if (command === "providers") {
+    const definitions = listProviderDefinitions();
+    if (values.json) {
+      console.log(JSON.stringify({ defaultStack: DEFAULT_STACK, providers: definitions }, null, 2));
+    } else {
+      console.log("Basic stack: Hostinger DNS + Supabase + Vercel\n");
+      for (const definition of definitions) {
+        console.log(`${definition.capability.padEnd(10)} ${definition.id.padEnd(15)} ${definition.description}`);
+      }
+    }
+    return;
+  }
+
+  const dnsProvider = providerId("dns", values["dns-provider"], DEFAULT_STACK.dns) as "hostinger" | "cloudflare";
+  const backendProvider = providerId("backend", values["backend-provider"], DEFAULT_STACK.backend) as "supabase" | "firebase";
+  const deploymentProvider = providerId("deployment", values["deployment-provider"], DEFAULT_STACK.deployment) as "vercel" | "netlify";
+
   if (command === "doctor") {
-    const result = await runDoctor();
+    const result = await runDoctor({ dns: dnsProvider, backend: backendProvider, deployment: deploymentProvider });
     if (values.json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
@@ -52,33 +117,36 @@ async function main() {
   }
 
   if (command === "inventory") {
-    const inventory = await collectInventory();
-    console.log(JSON.stringify(inventory, null, 2));
+    console.log(JSON.stringify(await collectInventory(), null, 2));
     return;
   }
 
   if (command === "init") {
-    if (!firstArgument) {
-      throw new Error("Usage: vscd init <slug> [--title <name>] [--target <path>]");
-    }
+    if (!firstArgument) throw new Error("Usage: vscd init <slug> [provider options]");
     const target = values.target
       ? (isAbsolute(values.target) ? values.target : resolve(values.target))
       : resolve(firstArgument);
-    const domain = values.domain ?? process.env.HOSTINGER_DOMAIN ?? "moriatz.com";
-    await scaffoldProject(firstArgument, target, values.title, domain);
+    const domain = values.domain
+      ?? (dnsProvider === "hostinger" ? process.env.HOSTINGER_DOMAIN : process.env.CLOUDFLARE_DOMAIN)
+      ?? "moriatz.com";
+    const mailProvider = values["mail-provider"] as "hostinger-mail" | "backend" | undefined;
+    if (mailProvider) getProviderDefinition("mail", mailProvider);
+    await scaffoldProject(firstArgument, target, {
+      title: values.title,
+      domain,
+      dnsProvider,
+      backendProvider,
+      deploymentProvider,
+      mailProvider
+    });
     console.log(`Scaffolded ${firstArgument} at ${target}`);
 
     if (!values["no-domain"]) {
-      if (process.env.HOSTINGER_API_TOKEN) {
-        const dns = await provisionHostingerCname({
-          token: process.env.HOSTINGER_API_TOKEN,
-          domain,
-          name: firstArgument,
-          target: values.cname ?? DEFAULT_VERCEL_CNAME_TARGET
-        });
-        console.log(`${dns.changed ? "Created" : "Verified"} CNAME ${dns.hostname} -> ${dns.target}`);
-      } else {
-        console.log("Skipped DNS: HOSTINGER_API_TOKEN is not configured. Run `vscd dns` after adding it.");
+      try {
+        const dns = await provisionDnsCname({ manifest: await readProjectManifest(target) });
+        console.log(`${dns.changed ? "Created" : "Verified"} ${dns.provider} CNAME ${dns.hostname} -> ${dns.target}`);
+      } catch (error) {
+        console.log(`Skipped DNS: ${error instanceof Error ? error.message : error}`);
       }
     }
     return;
@@ -95,8 +163,19 @@ async function main() {
       console.log(`Stored Paul design-system credentials in ${credentialsPath}`);
       return;
     }
+    if (firstArgument === "cloudflare") {
+      const token = process.env.CLOUDFLARE_API_TOKEN;
+      const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+      const domain = values.domain ?? process.env.CLOUDFLARE_DOMAIN;
+      if (!token || !zoneId || !domain) {
+        throw new Error("CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID, and CLOUDFLARE_DOMAIN must be present.");
+      }
+      await saveCloudflareCredentials({ token, zoneId, domain, path: credentialsPath });
+      console.log(`Stored Cloudflare credentials in ${credentialsPath}`);
+      return;
+    }
     if (firstArgument !== "hostinger") {
-      throw new Error("Usage: vscd auth <hostinger|design-system>");
+      throw new Error("Usage: vscd auth <hostinger|cloudflare|design-system>");
     }
     const token = process.env.HOSTINGER_API_TOKEN;
     const domain = values.domain ?? process.env.HOSTINGER_DOMAIN;
@@ -116,21 +195,8 @@ async function main() {
   }
 
   if (command === "dns") {
-    if (!firstArgument) {
-      throw new Error("Usage: vscd dns <subdomain> [--domain <domain>] [--target <hostname>]");
-    }
-    const token = process.env.HOSTINGER_API_TOKEN;
-    const domain = values.domain ?? process.env.HOSTINGER_DOMAIN;
-    if (!token || !domain) {
-      throw new Error("HOSTINGER_API_TOKEN and HOSTINGER_DOMAIN are required for DNS provisioning.");
-    }
-
-    const dns = await provisionHostingerCname({
-      token,
-      domain,
-      name: firstArgument,
-      target: values.target ?? DEFAULT_VERCEL_CNAME_TARGET
-    });
+    const manifest = await readProjectManifest(firstArgument ?? ".");
+    const dns = await provisionDnsCname({ manifest, target: values.target });
     console.log(JSON.stringify(dns, null, values.json ? 2 : undefined));
     return;
   }
@@ -141,21 +207,15 @@ async function main() {
     if (values.json) {
       console.log(JSON.stringify(checks, null, 2));
     } else {
-      for (const check of checks) {
-        console.log(`${check.ok ? "PASS" : "FAIL"}  ${check.id}: ${check.detail}`);
-      }
+      for (const check of checks) console.log(`${check.ok ? "PASS" : "FAIL"}  ${check.id}: ${check.detail}`);
     }
     process.exitCode = checks.every((check) => check.ok) ? 0 : 1;
     return;
   }
 
   if (command === "register") {
-    if (!firstArgument) {
-      throw new Error("Usage: vscd register <manifest-path>");
-    }
-    const manifest = projectManifestSchema.parse(
-      JSON.parse(await readFile(resolve(firstArgument), "utf8"))
-    );
+    if (!firstArgument) throw new Error("Usage: vscd register <manifest-path>");
+    const manifest = projectManifestSchema.parse(JSON.parse(await readFile(resolve(firstArgument), "utf8")));
     await upsertProject(registryPath, manifest);
     console.log(`Registered ${manifest.slug} in ${registryPath}`);
     return;
@@ -176,4 +236,3 @@ main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
 });
-

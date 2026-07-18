@@ -23,6 +23,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify source
         run: pnpm check
+        env:
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
       - name: Pull Vercel settings
         working-directory: apps/console
         run: pnpm dlx vercel@50.28.0 pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
@@ -39,6 +42,8 @@ jobs:
             exit 1
           fi
         env:
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Deploy the verified artifact

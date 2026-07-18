@@ -4,6 +4,10 @@
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=@vscd/console",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/console", "destination": "/index.html" },
+    { "source": "/console/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

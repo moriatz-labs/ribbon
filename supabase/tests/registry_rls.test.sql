@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(10);
 
 select has_table('public', 'vscd_projects', 'registry table exists');
 select ok(
@@ -37,6 +37,11 @@ select is(
   (select count(*)::integer from public.vscd_projects),
   1,
   'an authenticated owner sees only their own rows'
+);
+select is(
+  (select providers #>> '{deployment,provider}' from public.vscd_projects limit 1),
+  'vercel',
+  'new registry rows use the capability-slot provider format'
 );
 select is(
   (select slug from public.vscd_projects limit 1),

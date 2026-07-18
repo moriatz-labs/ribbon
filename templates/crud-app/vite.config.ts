@@ -1,12 +1,25 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const configuredDesignSystem = process.env.DESIGN_SYSTEM_SOURCE;
-const localDesignSystem = configuredDesignSystem
-  ? path.resolve(configuredDesignSystem)
-  : path.resolve(__dirname, "../design-system");
+function manifestDesignSystemSource() {
+  try {
+    const manifest = JSON.parse(
+      readFileSync(path.resolve(__dirname, "vscd.json"), "utf8")
+    ) as { providers?: { designSystem?: { source?: string } } };
+    return manifest.providers?.designSystem?.source;
+  } catch {
+    return undefined;
+  }
+}
+
+const configuredDesignSystem =
+  process.env.DESIGN_SYSTEM_SOURCE ?? manifestDesignSystemSource();
+const localDesignSystem = path.resolve(
+  __dirname,
+  configuredDesignSystem ?? "../design-system"
+);
 const remoteDesignSystem = path.resolve(__dirname, ".vercel-design-system");
 const designSystemRoot = existsSync(path.join(localDesignSystem, "packages/ui_core/src/index.ts"))
   ? localDesignSystem

@@ -2,108 +2,94 @@
 
 ## Decision
 
-VSCD manages each side project as a separate repository and provider unit. Vercel hosts the frontend and lightweight serverless endpoints. Supabase supplies Postgres, Auth, Storage, and row-level authorization. Cloudflare remains authoritative DNS and is automated through scoped API tokens. The local design system is copied into each project's implementation at scaffold time.
+VSCD manages each product as a separate repository and provider unit. The manifest selects adapters by capability: DNS, deployment, backend, and mail. Hostinger + Supabase + Vercel remains the basic profile, while Cloudflare + Firebase + Netlify is an equally valid built-in profile. The choices can be mixed independently.
 
-Cloudflare does not proxy Vercel traffic in the default architecture. Vercel currently recommends against an extra reverse proxy because it reduces traffic visibility, weakens bot/security signals, adds latency, and complicates caching. VSCD therefore writes Vercel hostnames to Cloudflare with `proxied: false` and uses Vercel's edge network and firewall for runtime traffic.
+Local builds resolve Paul's design system from the repository-relative manifest source or `DESIGN_SYSTEM_SOURCE`. Remote builds clone the pinned commit into `.vercel-design-system`.
 
 ## System Map
 
 ```mermaid
 flowchart LR
-    U["User browser"] -->|"DNS lookup"| CF["Cloudflare DNS\nDNS-only record"]
-    CF -->|"A / CNAME answer"| VE["Vercel Edge\nVite app + functions"]
-    VE -->|"Publishable key + user JWT"| SA["Supabase Auth"]
-    VE -->|"RLS-constrained queries"| DB["Supabase Postgres"]
-    VE -->|"Private object policies"| ST["Supabase Storage"]
+    U["User browser"] --> DNS["DNS adapter\nHostinger or Cloudflare"]
+    DNS --> DEP["Deployment adapter\nVercel or Netlify"]
+    DEP --> APP["Vite application\nprovider-neutral UI"]
+    APP --> BE["Backend adapter\nSupabase or Firebase"]
+    BE --> AUTH["Identity + authorization"]
+    BE --> DATA["Records + object storage"]
 
-    DS["Paul design system"] -. "build-time tokens and patterns" .-> VE
-    CDX["Codex + vscd-build skill"] --> CLI["VSCD CLI"]
-    CLI -->|"project/link/env"| VA["Vercel API / CLI"]
-    CLI -->|"project/migrations"| SMA["Supabase CLI / Management API"]
-    CLI -->|"DNS record"| CFA["Cloudflare API"]
-    VA --> VE
-    SMA --> SA
-    SMA --> DB
-    CFA --> CF
+    DS["Paul design system"] -. "pinned build input" .-> APP
+    CDX["Codex + vscd-build"] --> CLI["VSCD CLI"]
+    CLI --> CATALOG["Provider catalog + contracts"]
+    CATALOG --> DNS
+    CATALOG --> DEP
+    CATALOG --> BE
 ```
 
-## Control Plane And Data Plane
+## Control And Runtime Planes
 
 | Plane | Responsibility | Credentials |
 |---|---|---|
-| Browser | UI, user session, direct RLS-safe data access | Supabase publishable key + user JWT |
-| Vercel runtime | Trusted API endpoints and orchestration callbacks | Server-only environment variables |
-| Supabase | Authentication, database authorization, storage policies | JWT at runtime; PAT only for provisioning |
-| Cloudflare | Authoritative DNS records | Zone-scoped API token, server/CI only |
-| GitHub Actions | Production build and release | Vercel, Cloudflare, and Supabase secrets |
-| Codex/VSCD | Scaffold, check, inventory, and handoff | Local CLI sessions; no secret values logged |
+| Browser | UI, user session, provider-neutral backend calls | Publishable Firebase or Supabase configuration |
+| Backend provider | Identity, record authorization, object access | User identity at runtime; admin credentials only for trusted operations |
+| Deployment provider | Static app and optional serverless endpoints | Vercel or Netlify credentials in GitHub Actions |
+| DNS provider | Authoritative CNAME | Hostinger or Cloudflare token in the control plane |
+| GitHub Actions | Verified production build and selected deployment workflow | Selected adapter secrets and design-system deploy key |
+| Codex/VSCD | Scaffold, check, inventory, registration, URL handoff | Local authenticated CLI sessions; no logged secret values |
 
-## “Build Me X” Sequence
+## Build Sequence
 
 ```mermaid
 sequenceDiagram
     actor User
     participant Codex
     participant VSCD as VSCD CLI
+    participant DNS as DNS adapter
+    participant Backend as Backend adapter
     participant GitHub
-    participant Vercel
-    participant Supabase
-    participant Cloudflare
+    participant Deploy as Deployment adapter
 
-    User->>Codex: Build me X
-    Codex->>VSCD: doctor
-    VSCD-->>Codex: provider/account readiness
-    Codex->>VSCD: init x
-    VSCD-->>Codex: app + migrations + workflows
-    Codex->>Codex: implement product behavior and design
+    User->>Codex: Build me X with selected providers
+    Codex->>VSCD: doctor --provider profile
+    VSCD-->>Codex: selected adapter readiness
+    Codex->>VSCD: init x --dns-provider ... --backend-provider ... --deployment-provider ...
+    VSCD->>DNS: conflict-safe CNAME upsert
+    VSCD-->>Codex: app + selected provider files + workflow
     Codex->>VSCD: check x
-    VSCD-->>Codex: types, tests, secrets, RLS, release gates
+    VSCD-->>Codex: provider-specific policy and release gates
     Codex->>GitHub: feature branch + pull request
-    GitHub->>Supabase: run local migration and RLS tests
-    GitHub->>Vercel: build once and deploy prebuilt artifact
-    GitHub->>Cloudflare: upsert DNS-only CNAME
-    Vercel-->>GitHub: deployment URL
-    GitHub-->>VSCD: deployment artifact / optional registry webhook
-    VSCD-->>Codex: project URLs
-    Codex-->>User: preview or production URLs
+    GitHub->>Backend: run provider policy tests
+    GitHub->>Deploy: deploy verified artifact and assign hostname
+    Deploy-->>GitHub: deployment URL
+    GitHub-->>VSCD: deployment artifact
+    VSCD-->>User: verified project URLs
 ```
 
-## Project Boundaries
+## Repository Boundaries
 
 ```text
 VSCD repository
-  apps/console        project registry and architecture view
-  packages/core       manifests, registry, provider API clients
-  packages/cli        doctor, inventory, init, check, register, urls
-  templates/crud-app  standalone side-project starter
-  supabase/            VSCD's private registry schema and RLS tests
-  docs/                architecture and technical decisions
+  apps/console        provider-neutral project registry
+  packages/core       manifest normalization, catalog, contracts, API clients
+  packages/cli        doctor, inventory, scaffold, DNS, checks, registry
+  templates/crud-app  base app plus provider-specific adapters/workflows
+  supabase/            VSCD console registry schema and policy tests
+  docs/                public architecture and extension contract
 
-Generated project repository
-  src/                 React product UI using the design system
-  supabase/            schema, migrations, RLS, storage, SQL tests
-  scripts/             idempotent provider automation
-  .github/workflows/   CI and production release
-  vscd.json            provider references, state, and URLs
+Generated project
+  src/lib/backend.ts  selected backend boundary
+  supabase/ or *.rules selected backend authorization artifacts
+  scripts/             manifest-driven DNS and build preparation
+  .github/workflows/   selected deployment adapter
+  vscd.json            capability selections, safe metadata, URLs
 ```
 
-## Authentication
+## Security Invariants
 
-- End-user authentication uses Supabase Auth. The browser receives only the publishable key and a user JWT.
-- Authorization lives in Postgres RLS and Storage policies. App code does not replace database authorization.
-- VSCD console records are owner-scoped by `owner_id = (select auth.uid())` for select, insert, update, and delete.
-- Cloudflare automation uses an Account API token where supported, otherwise a user API token. Scope it to `Zone:Read` and `DNS:Edit` for one zone, with a TTL and IP restriction when practical.
-- Vercel automation uses `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` only inside GitHub Actions.
-- Supabase provisioning uses a PAT for a personal control plane. OAuth2 with narrow scopes is the migration path if VSCD ever manages projects for other users.
-- Cloudflare Access is not placed in front of Vercel by default. If a private admin surface needs Access, host that surface on Cloudflare Workers/Pages or accept and document the reverse-proxy tradeoff.
+- DNS adapters reject conflicting record types. Cloudflare routes remain DNS-only.
+- Supabase tables in exposed schemas enable RLS, grant Data API access explicitly, and ship SQL policy tests.
+- Firebase documents and objects require matching authenticated ownership in committed rules.
+- Browser variables may contain publishable provider configuration, never service-role/admin, DNS, mail, deployment, or deploy-key secrets.
+- Production deployment runs only through the generated provider workflow after local and VSCD checks.
 
-## Primary Sources
-
-- [Vercel with Cloudflare guidance](https://vercel.com/kb/guide/cloudflare-with-vercel)
-- [Vercel monorepos and skipped deployments](https://vercel.com/docs/monorepos)
-- [Vercel remote caching](https://vercel.com/docs/monorepos/remote-caching)
-- [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
-- [Supabase Management API](https://supabase.com/docs/reference/api/getting-started)
-- [Cloudflare API tokens](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
-- [Cloudflare DNS Records API](https://developers.cloudflare.com/api/resources/dns/subresources/records/methods/create/)
+See [Provider architecture](provider-architecture.md) for the extension protocol.
 

@@ -24,6 +24,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prepare pinned design system
+        run: pnpm prepare:design-system
+        env:
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
       - run: pnpm turbo run lint typecheck test build --affected
       - run: pnpm codex:check
 

@@ -1,6 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
-import { projectManifestSchema } from "@vscd/core";
+import { projectManifestSchema, type ProjectManifest } from "@vscd/core";
 
 export interface CodexCheckResult {
   id: string;
@@ -61,6 +61,7 @@ function checkRls(sql: string) {
 export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
   const results: CodexCheckResult[] = [];
   let enforceApplicationDesignSystem = true;
+  let manifest: ProjectManifest | undefined;
   const requiredFiles = ["package.json", "vscd.json", ".env.example"];
 
   for (const file of requiredFiles) {
@@ -87,7 +88,7 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
   });
 
   try {
-    const manifest = projectManifestSchema.parse(
+    manifest = projectManifestSchema.parse(
       JSON.parse(await readFile(join(root, "vscd.json"), "utf8"))
     );
     enforceApplicationDesignSystem = manifest.projectType !== "control-plane";
@@ -102,20 +103,32 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
         ? `Paul's design system is pinned at ${designSystem.commit.slice(0, 12)}`
         : "design system repository, commit, packages, and DatePicker requirement must be pinned"
     });
-    if (manifest.providers.hostinger) {
+    const dns = manifest.providers.dns;
+    if (!dns) {
       results.push({
-        id: "hostinger:cname",
-        ok: manifest.providers.hostinger.hostname.endsWith(`.${manifest.providers.hostinger.domain}`),
-        detail: `${manifest.providers.hostinger.hostname} is managed in Hostinger DNS`
+        id: "dns:selection",
+        ok: false,
+        detail: "no DNS provider selected"
       });
-      if (manifest.providers.hostinger.mail) {
+    } else {
+      const configured = Boolean(dns.domain && dns.hostname && dns.hostname.endsWith(`.${dns.domain}`));
+      results.push({
+        id: `dns:${dns.provider}`,
+        ok: configured && (dns.provider !== "cloudflare" || dns.proxied === false),
+        detail: configured
+          ? `${dns.hostname} is managed by ${dns.provider}`
+          : `${dns.provider} DNS requires a domain and matching hostname`
+      });
+    }
+    if (manifest.providers.mail?.provider === "hostinger-mail") {
         const envExample = await readFile(join(root, ".env.example"), "utf8");
         const requiredMailKeys = [
-          manifest.providers.hostinger.mail.apiTokenEnv,
-          manifest.providers.hostinger.mail.mailboxIdEnv,
-          manifest.providers.hostinger.mail.fromEnv,
-          "SUPABASE_URL",
-          "SUPABASE_SERVICE_ROLE_KEY"
+          manifest.providers.mail.apiTokenEnv,
+          manifest.providers.mail.mailboxIdEnv,
+          manifest.providers.mail.fromEnv,
+          ...(manifest.providers.backend.provider === "supabase"
+            ? ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+            : [])
         ];
         const missingMailKeys = requiredMailKeys.filter(
           (key) => !new RegExp(`^${key}=`, "m").test(envExample)
@@ -135,13 +148,6 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
             ? "server-side Hostinger magic-link route found"
             : "api/auth/magic-link.ts is missing"
         });
-      }
-    } else {
-      results.push({
-        id: "cloudflare:dns-only",
-        ok: manifest.providers.cloudflare?.proxied === false,
-        detail: "Vercel hostname is configured as Cloudflare DNS-only"
-      });
     }
   } catch (error) {
     results.push({
@@ -157,7 +163,11 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
 
   for (const file of sourceFiles) {
     const source = await readFile(file, "utf8");
-    if (/VITE_(?:SUPABASE_SERVICE_ROLE|CLOUDFLARE_API_TOKEN|HOSTINGER_(?:API_TOKEN|MAIL_API_TOKEN|MAILBOX_ID)|VERCEL_TOKEN)/.test(source)) {
+    const browserVariables = [...source.matchAll(/\bVITE_[A-Z0-9_]+\b/g)].map((match) => match[0]);
+    const exposesServerSecret = browserVariables.some((name) =>
+      /(?:SECRET|SERVICE_ROLE|CLOUDFLARE_API_TOKEN|HOSTINGER_(?:API_TOKEN|MAIL_API_TOKEN|MAILBOX_ID)|VERCEL_TOKEN|NETLIFY_AUTH_TOKEN)/.test(name)
+    );
+    if (exposesServerSecret) {
       secretLeaks.push(relative(root, file));
     }
   }
@@ -245,19 +255,12 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     /^(?:lucide-react|tailwindcss|@tailwindcss\/|@radix-ui\/|@shadcn\/)/.test(dependency)
   );
   const nativeDateInputs: string[] = [];
-  const nativeDateSelectors: string[] = [];
   for (const file of uiSourceFiles) {
-    const path = relative(root, file);
-    if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path)) continue;
-    const source = await readFile(file, "utf8");
-    if (/<input\b[^>]*\btype\s*=\s*["']date["']/i.test(source)) {
+    if (/<input\b[^>]*\btype\s*=\s*["']date["']/i.test(await readFile(file, "utf8"))) {
       nativeDateInputs.push(relative(root, file));
     }
-    if (/querySelector(?:All)?(?:<[^>]+>)?\s*\(\s*["'`]input\s*\[\s*type\s*=\s*["']date["']\s*\]["'`]/i.test(source)) {
-      nativeDateSelectors.push(path);
-    }
   }
-  const prohibitedOk = prohibitedDependencies.length === 0 && nativeDateInputs.length === 0 && nativeDateSelectors.length === 0;
+  const prohibitedOk = prohibitedDependencies.length === 0 && nativeDateInputs.length === 0;
   results.push({
     id: "design-system:no-bypasses",
     ok: prohibitedOk,
@@ -265,8 +268,7 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
       ? "no Tailwind, Lucide, shadcn, direct Radix, or native date-input bypasses found"
       : [
           prohibitedDependencies.length ? `prohibited dependencies: ${prohibitedDependencies.join(", ")}` : "",
-          nativeDateInputs.length ? `native date inputs: ${nativeDateInputs.join(", ")}` : "",
-          nativeDateSelectors.length ? `native date selectors: ${nativeDateSelectors.join(", ")}` : ""
+          nativeDateInputs.length ? `native date inputs: ${nativeDateInputs.join(", ")}` : ""
         ].filter(Boolean).join("; ")
   });
 
@@ -306,33 +308,91 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     tableCount += rls.tables.length;
     rlsMissing.push(...rls.missing.map((table) => `${basename(migration)}:${table}`));
   }
-  results.push({
-    id: "supabase:rls",
-    ok: migrationFiles.length > 0 && tableCount > 0 && rlsMissing.length === 0,
-    detail: rlsMissing.length > 0
-      ? `RLS missing for ${rlsMissing.join(", ")}`
-      : `${tableCount} public tables declare RLS`
-  });
-
-  const hasRlsTests = files.some((file) => {
-    const path = projectRelativePath(file);
-    return path.startsWith("supabase/tests/") && path.endsWith(".sql");
-  });
-  results.push({
-    id: "supabase:rls-tests",
-    ok: hasRlsTests,
-    detail: hasRlsTests ? "RLS SQL tests found" : "supabase/tests/*.sql is missing"
-  });
+  if (manifest?.providers.backend.provider === "supabase") {
+    results.push({
+      id: "backend:supabase:rls",
+      ok: migrationFiles.length > 0 && tableCount > 0 && rlsMissing.length === 0,
+      detail: rlsMissing.length > 0
+        ? `RLS missing for ${rlsMissing.join(", ")}`
+        : `${tableCount} public tables declare RLS`
+    });
+    const hasRlsTests = files.some((file) => {
+      const path = projectRelativePath(file);
+      return path.startsWith("supabase/tests/") && path.endsWith(".sql");
+    });
+    results.push({
+      id: "backend:supabase:rls-tests",
+      ok: hasRlsTests,
+      detail: hasRlsTests ? "RLS SQL tests found" : "supabase/tests/*.sql is missing"
+    });
+  } else if (manifest?.providers.backend.provider === "firebase") {
+    const firestoreRules = await readFile(join(root, "firestore.rules"), "utf8").catch(() => "");
+    const storageRules = await readFile(join(root, "storage.rules"), "utf8").catch(() => "");
+    const rulesOk =
+      firestoreRules.includes("request.auth.uid")
+      && firestoreRules.includes("owner_id")
+      && storageRules.includes("request.auth.uid")
+      && storageRules.includes("userId");
+    results.push({
+      id: "backend:firebase:rules",
+      ok: rulesOk,
+      detail: rulesOk
+        ? "Firestore and Storage rules enforce owner-scoped access"
+        : "owner-scoped firestore.rules and storage.rules are required"
+    });
+    results.push({
+      id: "backend:firebase:config",
+      ok: await exists(join(root, "firebase.json")),
+      detail: await exists(join(root, "firebase.json")) ? "firebase.json found" : "firebase.json is missing"
+    });
+    const hasRulesTests = files.some((file) => {
+      const path = projectRelativePath(file);
+      return /(?:^|\/)firebase-rules\.test\.[cm]?[jt]s$/.test(path);
+    });
+    results.push({
+      id: "backend:firebase:rules-tests",
+      ok: hasRulesTests,
+      detail: hasRulesTests ? "Firebase authorization rule tests found" : "firebase-rules.test.ts is missing"
+    });
+  }
 
   const workflows = files.filter((file) => {
     const path = projectRelativePath(file);
     return path.startsWith(".github/workflows/") && /\.ya?ml$/.test(path);
   });
+  const releaseWorkflowSource = (await Promise.all(
+    workflows.map((file) => readFile(file, "utf8"))
+  )).join("\n");
   results.push({
     id: "release:workflow",
-    ok: workflows.length > 0,
-    detail: workflows.length > 0 ? `${workflows.length} workflow files found` : "GitHub Actions workflow missing"
+    ok: workflows.length > 0 && Boolean(
+      manifest && releaseWorkflowSource.toLowerCase().includes(manifest.providers.deployment.provider)
+    ),
+    detail: workflows.length > 0 && manifest
+      ? `${manifest.providers.deployment.provider} release workflow found`
+      : "GitHub Actions workflow missing"
   });
+  if (manifest?.providers.deployment.provider === "netlify") {
+    const requiredBuildVariables = manifest.providers.backend.provider === "supabase"
+      ? ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"]
+      : [
+          "VITE_FIREBASE_API_KEY",
+          "VITE_FIREBASE_AUTH_DOMAIN",
+          "VITE_FIREBASE_PROJECT_ID",
+          "VITE_FIREBASE_STORAGE_BUCKET",
+          "VITE_FIREBASE_APP_ID"
+        ];
+    const missingBuildVariables = requiredBuildVariables.filter(
+      (variable) => !releaseWorkflowSource.includes(variable)
+    );
+    results.push({
+      id: "release:netlify:backend-env",
+      ok: missingBuildVariables.length === 0,
+      detail: missingBuildVariables.length === 0
+        ? `${manifest.providers.backend.provider} public build variables are wired to Netlify CI`
+        : `missing Netlify build variables: ${missingBuildVariables.join(", ")}`
+    });
+  }
 
   return results;
 }

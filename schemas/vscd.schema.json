@@ -1,38 +1,101 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vscd.local/schemas/vscd.schema.json",
+  "$id": "https://raw.githubusercontent.com/Paul-M-Kallarackal/VSCD/main/schemas/vscd.schema.json",
   "title": "VSCD project manifest",
   "type": "object",
-  "required": ["name", "slug", "framework", "providers", "urls", "status"],
+  "required": ["manifestVersion", "name", "slug", "framework", "providers", "urls", "status"],
   "properties": {
+    "$schema": { "type": "string" },
+    "manifestVersion": { "const": 2 },
     "name": { "type": "string", "minLength": 1 },
     "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "description": { "type": "string" },
-    "framework": { "enum": ["vite-react"] },
+    "framework": { "const": "vite-react" },
     "projectType": { "enum": ["application", "control-plane"], "default": "application" },
     "providers": {
       "type": "object",
-      "required": ["vercel", "supabase", "designSystem"],
-      "anyOf": [
-        { "required": ["cloudflare"] },
-        { "required": ["hostinger"] }
-      ],
+      "required": ["deployment", "backend", "designSystem"],
       "properties": {
-        "vercel": { "type": "object" },
-        "supabase": { "type": "object" },
-        "cloudflare": {
-          "type": "object",
-          "required": ["proxied"],
-          "properties": { "proxied": { "const": false } }
+        "deployment": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["provider"],
+              "properties": {
+                "provider": { "const": "vercel" },
+                "projectId": { "type": "string", "minLength": 1 },
+                "projectName": { "type": "string", "minLength": 1 },
+                "teamId": { "type": "string", "minLength": 1 },
+                "teamSlug": { "type": "string", "minLength": 1 },
+                "cnameTarget": { "type": "string", "default": "cname.vercel-dns.com" }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["provider"],
+              "properties": {
+                "provider": { "const": "netlify" },
+                "siteId": { "type": "string", "minLength": 1 },
+                "siteName": { "type": "string", "minLength": 1 },
+                "accountSlug": { "type": "string", "minLength": 1 },
+                "cnameTarget": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
         },
-        "hostinger": {
-          "type": "object",
-          "required": ["domain", "hostname"],
-          "properties": {
-            "domain": { "type": "string", "minLength": 1 },
-            "hostname": { "type": "string", "minLength": 1 },
-            "ttl": { "type": "integer", "minimum": 300, "maximum": 86400, "default": 300 },
-            "mail": {
+        "backend": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["provider"],
+              "properties": {
+                "provider": { "const": "supabase" },
+                "projectRef": { "type": "string", "minLength": 1 },
+                "organizationSlug": { "type": "string", "minLength": 1 },
+                "region": { "type": "string", "minLength": 1 }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["provider"],
+              "properties": {
+                "provider": { "const": "firebase" },
+                "projectId": { "type": "string", "minLength": 1 },
+                "projectName": { "type": "string", "minLength": 1 },
+                "region": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        "dns": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["provider", "domain", "hostname"],
+              "properties": {
+                "provider": { "const": "hostinger" },
+                "domain": { "type": "string", "minLength": 1 },
+                "hostname": { "type": "string", "minLength": 1 },
+                "ttl": { "type": "integer", "minimum": 300, "maximum": 86400, "default": 300 }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["provider", "proxied"],
+              "properties": {
+                "provider": { "const": "cloudflare" },
+                "zoneId": { "type": "string", "minLength": 1 },
+                "domain": { "type": "string", "minLength": 1 },
+                "hostname": { "type": "string", "minLength": 1 },
+                "ttl": { "type": "integer", "minimum": 60, "maximum": 86400, "default": 300 },
+                "proxied": { "const": false }
+              }
+            }
+          ]
+        },
+        "mail": {
+          "oneOf": [
+            {
               "type": "object",
               "required": ["provider", "apiTokenEnv", "mailboxIdEnv", "fromEnv"],
               "properties": {
@@ -41,14 +104,23 @@
                 "mailboxIdEnv": { "const": "HOSTINGER_MAILBOX_ID" },
                 "fromEnv": { "const": "HOSTINGER_MAIL_FROM" }
               }
+            },
+            {
+              "type": "object",
+              "required": ["provider"],
+              "properties": { "provider": { "const": "backend" } }
             }
-          }
+          ]
         },
         "designSystem": {
           "type": "object",
           "required": ["source", "repository", "commit", "packages", "requiredComponents"],
           "properties": {
-            "source": { "type": "string", "minLength": 1 },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?![\\\\/]{1,2}).+"
+            },
             "repository": { "type": "string", "format": "uri" },
             "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
             "packages": {
@@ -85,4 +157,3 @@
     }
   ]
 }
-

@@ -83,6 +83,28 @@ export async function saveHostingerCredentials({
   return path;
 }
 
+export async function saveCloudflareCredentials({
+  token,
+  zoneId,
+  domain,
+  path = process.env.VSCD_CREDENTIALS_PATH ?? defaultCredentialsPath
+}: {
+  token: string;
+  zoneId: string;
+  domain: string;
+  path?: string;
+}) {
+  assertSingleLine(token, "CLOUDFLARE_API_TOKEN");
+  assertSingleLine(zoneId, "CLOUDFLARE_ZONE_ID");
+  assertSingleLine(domain, "CLOUDFLARE_DOMAIN");
+  const values = await readCredentialValues(path);
+  values.set("CLOUDFLARE_API_TOKEN", token.trim());
+  values.set("CLOUDFLARE_ZONE_ID", zoneId.trim());
+  values.set("CLOUDFLARE_DOMAIN", domain.trim().toLowerCase());
+  await writeCredentialValues(path, values);
+  return path;
+}
+
 export async function saveDesignSystemCredentials({
   deployKey,
   commit,

@@ -1,9 +1,18 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
 
-const configuredSource = process.env.DESIGN_SYSTEM_SOURCE;
-const localRoot = configuredSource ? resolve(configuredSource) : resolve("../design-system");
+function manifestSource() {
+  try {
+    const manifest = JSON.parse(readFileSync(resolve("vscd.json"), "utf8"));
+    return manifest.providers?.designSystem?.source;
+  } catch {
+    return undefined;
+  }
+}
+
+const configuredSource = process.env.DESIGN_SYSTEM_SOURCE ?? manifestSource();
+const localRoot = resolve(configuredSource ?? "../design-system");
 const localEntry = join(localRoot, "packages/ui_core/src/index.ts");
 const remoteEntry = resolve(".vercel-design-system/packages/ui_core/src/index.ts");
 

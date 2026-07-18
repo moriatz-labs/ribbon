@@ -1,9 +1,9 @@
 import { Cloud, Database, LayoutTemplate, Triangle } from "lucide-react";
 
 const runtimeNodes = [
-  { name: "Cloudflare", role: "DNS", icon: Cloud },
-  { name: "Vercel", role: "Runtime", icon: Triangle },
-  { name: "Supabase", role: "Data", icon: Database }
+  { name: "DNS adapter", role: "Hostinger / Cloudflare", icon: Cloud },
+  { name: "Deployment adapter", role: "Vercel / Netlify", icon: Triangle },
+  { name: "Backend adapter", role: "Supabase / Firebase", icon: Database }
 ];
 
 export function RouteRail() {
@@ -12,7 +12,7 @@ export function RouteRail() {
       <div className="route-copy">
         <p className="eyebrow">Request path</p>
         <h2 id="route-heading">One route. Clear ownership.</h2>
-        <p>Cloudflare resolves the hostname. Vercel serves the app. Supabase authorizes every data row.</p>
+        <p>Each capability has one selected adapter. Change the provider without changing the product workflow.</p>
       </div>
 
       <div className="route-track">
