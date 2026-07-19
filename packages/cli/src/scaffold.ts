@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { projectManifestSchema, type ProjectManifest } from "@vscd/core";
 
-export const DEFAULT_DESIGN_SYSTEM_COMMIT = "4a488a815da102a547254ee16d1b4fabd741857b";
+export const DEFAULT_DESIGN_SYSTEM_COMMIT = "da80d329222bca6d9b0614ee3b4e873fe98ee473";
 export const DEFAULT_STACK = {
   dns: "hostinger",
   backend: "supabase",
