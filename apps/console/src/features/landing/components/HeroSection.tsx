@@ -1,6 +1,6 @@
-import { Box, Card, CardContent, CardMedia, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { Box, Card, CardContent, CardMedia, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { ArrowRightIcon, GitHubIcon } from "@paul/ui-icons";
-import { ExternalLinkList } from "@paul/ui-patterns/external-links";
+import { MarketingActionLink } from "@paul/ui-patterns/marketing";
 
 export function HeroSection() {
   return (
@@ -29,20 +29,10 @@ export function HeroSection() {
                   One manifest tells agents which providers to scaffold, which boundaries to preserve, and which checks must pass before release.
                 </Text>
               </Stack>
-              <ExternalLinkList
-                items={[
-                  {
-                    label: "Read the manifest",
-                    href: "https://github.com/Paul-M-Kallarackal/VSCD/blob/main/vscd.json",
-                    icon: <ArrowRightIcon aria-hidden="true" size={18} />,
-                  },
-                  {
-                    label: "View source",
-                    href: "https://github.com/Paul-M-Kallarackal/VSCD",
-                    icon: <GitHubIcon aria-hidden="true" size={18} />,
-                  },
-                ]}
-              />
+              <Flex gap="$3" wrap="wrap">
+                <MarketingActionLink action={{ label: "Read the manifest", href: "#manifest", icon: <ArrowRightIcon aria-hidden="true" size={18} /> }} />
+                <MarketingActionLink action={{ label: "View source", href: "https://github.com/Paul-M-Kallarackal/VSCD", external: true, variant: "outline", icon: <GitHubIcon aria-hidden="true" size={18} /> }} />
+              </Flex>
             </Grid>
           </CardContent>
         </Card>

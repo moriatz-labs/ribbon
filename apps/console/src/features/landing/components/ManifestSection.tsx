@@ -1,7 +1,6 @@
 import { Box, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { ArrowRightIcon, CheckIcon } from "@paul/ui-icons";
-import { ExternalLinkList } from "@paul/ui-patterns/external-links";
-import { CodeDemo } from "@paul/ui-patterns/marketing";
+import { CodeDemo, MarketingActionLink } from "@paul/ui-patterns/marketing";
 import { MANIFEST_EXAMPLE } from "../constants";
 
 const guarantees = [
@@ -39,15 +38,9 @@ export function ManifestSection() {
               </Flex>
             ))}
           </Stack>
-          <ExternalLinkList
-            items={[
-              {
-                label: "Read the repository guide",
-                href: "https://github.com/Paul-M-Kallarackal/VSCD/blob/main/README.md",
-                icon: <ArrowRightIcon aria-hidden="true" size={18} />,
-              },
-            ]}
-          />
+          <Flex>
+            <MarketingActionLink action={{ label: "Read the repository guide", href: "https://github.com/Paul-M-Kallarackal/VSCD/blob/main/README.md", external: true, variant: "outline", icon: <ArrowRightIcon aria-hidden="true" size={18} /> }} />
+          </Flex>
         </Stack>
         </Grid>
       </Container>
