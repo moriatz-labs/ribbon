@@ -1,5 +1,3 @@
-import { MarketingPage } from "@paul/ui-patterns/marketing";
-import { ClosingSection } from "../components/ClosingSection";
 import { HeroSection } from "../components/HeroSection";
 import { LandingFooter } from "../components/LandingFooter";
 import { LandingHeader } from "../components/LandingHeader";
@@ -9,19 +7,16 @@ import { WorkflowSection } from "../components/WorkflowSection";
 
 export function PublicLandingPage() {
   return (
-    <>
+    <div className="landing-page">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <LandingHeader />
-      <MarketingPage>
-        <div id="main-content" tabIndex={-1}>
-          <HeroSection />
-          <ProvidersSection />
-          <WorkflowSection />
-          <ManifestSection />
-          <ClosingSection />
-        </div>
-      </MarketingPage>
+      <main id="main-content">
+        <HeroSection />
+        <ProvidersSection />
+        <WorkflowSection />
+        <ManifestSection />
+      </main>
       <LandingFooter />
-    </>
+    </div>
   );
 }

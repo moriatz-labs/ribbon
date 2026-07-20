@@ -1,38 +1,25 @@
-import { Heading, Stack, Text } from "@paul/ui-core/marketing";
-import { FileTextIcon, PackageIcon, ShieldCheckIcon } from "@paul/ui-icons";
-import { BentoGrid, MarketingSection } from "@paul/ui-patterns/marketing";
+import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { WORKFLOW_STEPS } from "../constants";
-
-const workflowIcons = [
-  <FileTextIcon aria-hidden="true" key="describe" />,
-  <PackageIcon aria-hidden="true" key="generate" />,
-  <ShieldCheckIcon aria-hidden="true" key="verify" />,
-] as const;
 
 export function WorkflowSection() {
   return (
-    <MarketingSection id="workflow" muted>
-      <Stack gap="$10">
-        <Stack gap="$3" css={{ maxWidth: "$reading", marginInline: "auto", textAlign: "center" }}>
-          <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Agent workflow</Text>
-          <Heading size="h2" css={{ fontSize: "$2xl", lineHeight: "$tight", "@md": { fontSize: "$3xl" } }}>
-            A short path from intent to a reviewed release.
-          </Heading>
-          <Text size="lg" css={{ color: "$mutedForeground" }}>
-            The repository tells an agent what to select, what to generate, and what must pass before anything ships.
-          </Text>
+    <Box as="section" id="workflow" className="landing-section" aria-labelledby="workflow-title">
+      <Container>
+        <Stack gap="$4" className="landing-section-heading">
+          <Text size="xs" color="$mutedForeground" className="landing-kicker">Agent workflow</Text>
+          <Heading id="workflow-title" size="h2">A short path from intent to a reviewed release.</Heading>
         </Stack>
-        <BentoGrid
-          label="Agent workflow"
-          items={WORKFLOW_STEPS.map((step, index) => ({
-            id: step.number,
-            eyebrow: step.number,
-            title: step.title,
-            description: `${step.description} Run ${step.command}.`,
-            icon: workflowIcons[index],
-          }))}
-        />
-      </Stack>
-    </MarketingSection>
+        <Grid columns={{ initial: "1fr", md: "repeat(3, minmax(0, 1fr))" }} gap="$5" className="workflow-grid">
+          {WORKFLOW_STEPS.map((step) => (
+            <Box as="article" className="workflow-card" key={step.number}>
+              <Text size="xs" color="$mutedForeground" className="workflow-number">{step.number}</Text>
+              <Heading size="h3">{step.title}</Heading>
+              <Text size="sm" color="$mutedForeground">{step.description}</Text>
+              <code>{step.command}</code>
+            </Box>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
   );
 }
