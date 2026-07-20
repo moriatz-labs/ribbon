@@ -1,4 +1,4 @@
-import { Badge, Box, Container, Flex, Heading, Stack, Text } from "@paul/ui-core";
+import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { DataTable, type DataTableColumn } from "@paul/ui-patterns/data";
 import { PROVIDER_CAPABILITIES } from "../constants";
 
@@ -37,10 +37,10 @@ const columns: Array<DataTableColumn<CapabilityRow>> = [
     header: "Supported providers",
     width: "33%",
     render: (_value, row) => (
-      <Flex gap="$2" wrap="wrap" aria-label={`${row.capability} providers`}>
-        <Badge tone="info" css={{ minHeight: "$controlCompact", padding: "$1 $2" }}>{row.defaultProvider}</Badge>
-        <Badge css={{ minHeight: "$controlCompact", padding: "$1 $2" }}>{row.alternativeProvider}</Badge>
-      </Flex>
+      <Stack gap="$1">
+        <Text size="xs" css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>{row.defaultProvider}</Text>
+        <Text size="xs" css={{ color: "$mutedForeground", fontFamily: "$nav" }}>{row.alternativeProvider}</Text>
+      </Stack>
     ),
   },
 ];
@@ -49,16 +49,16 @@ export function ProvidersSection() {
   return (
     <Box as="section" id="providers" css={{ borderTop: "$subtle solid $border", background: "$muted", paddingBlock: "$10" }}>
       <Container>
-        <Stack gap="$5">
-          <Stack gap="$3" css={{ maxWidth: "$reading" }}>
-            <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Four independent capabilities</Text>
-            <Heading size="h2">Choose infrastructure by capability.</Heading>
+        <Grid columns={{ initial: "1fr", lg: "minmax(0, .72fr) minmax(0, 1.28fr)" }} gap="$8" css={{ alignItems: "start" }}>
+          <Stack gap="$3">
+            <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Provider matrix</Text>
+            <Heading size="h2">Four contracts. One manifest.</Heading>
             <Text size="lg" css={{ color: "$mutedForeground" }}>
-              Each capability owns one contract. Provider choices stay explicit and replaceable.
+              Choose DNS, backend, deployment, and mail independently. Every provider stays replaceable.
             </Text>
           </Stack>
           <DataTable caption="VSCD capabilities and supported providers" columns={columns} rows={rows} density="compact" layout="fit" />
-        </Stack>
+        </Grid>
       </Container>
     </Box>
   );

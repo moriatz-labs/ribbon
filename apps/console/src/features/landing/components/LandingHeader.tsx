@@ -8,8 +8,8 @@ export function LandingHeader() {
         { label: "Providers", href: "#providers", variant: "ghost" },
         { label: "Workflow", href: "#workflow", variant: "ghost" },
         { label: "Manifest", href: "#manifest", variant: "ghost" },
+        { label: "Console", href: "/console", variant: "ghost" },
       ]}
-      action={{ label: "Open console", href: "/console" }}
     />
   );
 }
