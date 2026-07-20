@@ -68,11 +68,11 @@ sequenceDiagram
 
 ```text
 VSCD repository
-  apps/console        provider-neutral project registry
+  apps/console        public product site and server-side web functions
   packages/core       manifest normalization, catalog, contracts, API clients
   packages/cli        doctor, inventory, scaffold, DNS, checks, registry
   templates/crud-app  base app plus provider-specific adapters/workflows
-  supabase/            VSCD console registry schema and policy tests
+  supabase/            control-plane registry schema and policy tests
   docs/                public architecture and extension contract
 
 Generated project

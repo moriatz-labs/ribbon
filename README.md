@@ -9,8 +9,7 @@ VSCD is a provider-composable control plane for scaffolding, verifying, and rele
 | Surface | Location | Purpose |
 |---|---|---|
 | Public site | [vscd.moriatz.com](https://vscd.moriatz.com) | Product explanation and framework overview |
-| Console | [vscd.moriatz.com/console](https://vscd.moriatz.com/console) | Authenticated project registry |
-| Source | [GitHub](https://github.com/Paul-M-Kallarackal/VSCD) | CLI, contracts, console, templates, tests, and release automation |
+| Source | [GitHub](https://github.com/Paul-M-Kallarackal/VSCD) | CLI, contracts, public site, templates, tests, and release automation |
 
 ## Quick start
 
@@ -23,7 +22,7 @@ pnpm vscd doctor
 pnpm dev:console
 ```
 
-The public site runs at `http://localhost:4310/`. The registry console runs at `http://localhost:4310/console`.
+The public site runs at `http://localhost:4310/`.
 
 Create and validate an application:
 
@@ -124,7 +123,7 @@ The complete schema is [`schemas/vscd.schema.json`](schemas/vscd.schema.json).
 | `pnpm vscd init <slug> --target <path>` | Yes | Scaffold a version 2 application |
 | `pnpm vscd dns <project-path>` | Yes | Provision the manifest-selected CNAME without replacing conflicts |
 | `pnpm vscd check <project-path>` | No | Run provider, design-system, security, and release gates |
-| `pnpm dev:console` | No | Start the public site and console locally |
+| `pnpm dev:console` | No | Start the public site locally |
 | `pnpm check` | No | Run the complete workspace quality gate |
 | `pnpm codex:check` | No | Validate this repository as the VSCD control plane |
 
@@ -134,9 +133,9 @@ Use `pnpm vscd <command> --help` for command options.
 
 ```text
 .
-├── apps/console/               public site, registry console, and Vercel functions
+├── apps/console/               public site and Vercel functions
 │   ├── public/images/          repository-owned public media
-│   └── src/features/           landing and console composition
+│   └── src/features/           public landing-page composition
 ├── packages/core/              manifest schema, normalization, registry, provider contracts
 ├── packages/cli/               doctor, scaffold, DNS, inventory, checks, and registration
 ├── templates/crud-app/         provider-neutral application template and provider files
@@ -211,7 +210,7 @@ Production release is automatic after a reviewed merge to `main`:
 4. Wait for `CI` to pass.
 5. Merge the reviewed pull request.
 6. Let the `CI` workflow rerun its gates and deploy the verified artifact from `main`.
-7. Verify the Vercel deployment, `vscd.moriatz.com`, DNS, TLS, browser console, and registry URL.
+7. Verify the Vercel deployment, `vscd.moriatz.com`, DNS, TLS, and public-site browser behavior.
 
 Local production deployment is forbidden. The deploy job runs only on pushes to `main`, after workspace and Supabase RLS gates pass, then builds once and deploys the verified prebuilt artifact.
 
