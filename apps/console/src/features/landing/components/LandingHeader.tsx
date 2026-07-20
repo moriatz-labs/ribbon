@@ -1,19 +1,15 @@
-import { FluidGlassNavbar } from "@paul/ui-patterns/navigation";
+import { MarketingActionLink, MarketingNav } from "@paul/ui-patterns/marketing";
 
 export function LandingHeader() {
   return (
-    <FluidGlassNavbar
-      brand={{ label: "VSCD", to: "/" }}
+    <MarketingNav
+      brand={<MarketingActionLink action={{ label: "VSCD", href: "/", variant: "ghost" }} />}
       items={[
-        { label: "Providers", to: "/#providers" },
-        { label: "Workflow", to: "/#workflow" },
-        { label: "Manifest", to: "/#manifest" },
+        { label: "Providers", href: "#providers", variant: "ghost" },
+        { label: "Workflow", href: "#workflow", variant: "ghost" },
+        { label: "Manifest", href: "#manifest", variant: "ghost" },
       ]}
-      action={{ label: "Open console", to: "/console" }}
-      tone="white"
-      appearance="light"
-      size="medium"
-      width="content"
+      action={{ label: "Open console", href: "/console" }}
     />
   );
 }
