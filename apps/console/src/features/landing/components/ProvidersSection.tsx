@@ -1,12 +1,12 @@
-import { Grid, Heading, Stack, Text } from "@paul/ui-core";
-import { MarketingSection } from "@paul/ui-patterns/marketing";
+import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { PROVIDER_CAPABILITIES } from "../constants";
 import { ProviderCard } from "./ProviderCard";
 
 export function ProvidersSection() {
   return (
-    <MarketingSection id="providers" muted css={{ paddingBlock: "$16", "@lg": { paddingBlock: "$16" } }}>
-      <Stack gap="$10">
+    <Box as="section" id="providers" css={{ borderTop: "$subtle solid $border", background: "$muted", paddingBlock: "$16" }}>
+      <Container>
+        <Stack gap="$10">
         <Stack gap="$3" css={{ maxWidth: "$reading" }}>
           <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Four independent capabilities</Text>
           <Heading size="h2">Choose infrastructure by capability.</Heading>
@@ -19,7 +19,8 @@ export function ProvidersSection() {
             <ProviderCard capability={capability} key={capability.id} />
           ))}
         </Grid>
-      </Stack>
-    </MarketingSection>
+        </Stack>
+      </Container>
+    </Box>
   );
 }

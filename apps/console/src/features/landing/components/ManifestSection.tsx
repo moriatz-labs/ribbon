@@ -1,6 +1,6 @@
-import { Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { Box, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { ArrowRightIcon, CheckIcon } from "@paul/ui-icons";
-import { CodeDemo, MarketingActionLink, MarketingSection } from "@paul/ui-patterns/marketing";
+import { CodeDemo, MarketingActionLink } from "@paul/ui-patterns/marketing";
 import { MANIFEST_EXAMPLE } from "../constants";
 
 const guarantees = [
@@ -12,8 +12,9 @@ const guarantees = [
 
 export function ManifestSection() {
   return (
-    <MarketingSection id="manifest" muted css={{ paddingBlock: "$16", "@lg": { paddingBlock: "$16" } }}>
-      <Grid columns={{ initial: "1fr", lg: "minmax(0, 1fr) minmax(22rem, .8fr)" }} gap="$10" css={{ alignItems: "center" }}>
+    <Box as="section" id="manifest" css={{ borderTop: "$subtle solid $border", background: "$muted", paddingBlock: "$16" }}>
+      <Container>
+        <Grid columns={{ initial: "1fr", lg: "minmax(0, 1fr) minmax(22rem, .8fr)" }} gap="$10" css={{ alignItems: "center" }}>
         <CodeDemo
           title="Repository contract"
           snippets={[
@@ -41,7 +42,8 @@ export function ManifestSection() {
             <MarketingActionLink action={{ label: "Read the repository guide", href: "https://github.com/Paul-M-Kallarackal/VSCD/blob/main/README.md", external: true, variant: "outline", icon: <ArrowRightIcon aria-hidden="true" size={18} /> }} />
           </Flex>
         </Stack>
-      </Grid>
-    </MarketingSection>
+        </Grid>
+      </Container>
+    </Box>
   );
 }

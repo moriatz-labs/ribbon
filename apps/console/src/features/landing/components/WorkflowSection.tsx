@@ -1,11 +1,11 @@
-import { Badge, Card, CardContent, CardHeader, Grid, Heading, Stack, Surface, Text } from "@paul/ui-core";
-import { MarketingSection } from "@paul/ui-patterns/marketing";
+import { Badge, Box, Card, CardContent, CardHeader, Container, Grid, Heading, Stack, Surface, Text } from "@paul/ui-core";
 import { WORKFLOW_STEPS } from "../constants";
 
 export function WorkflowSection() {
   return (
-    <MarketingSection id="workflow" css={{ paddingBlock: "$16", "@lg": { paddingBlock: "$16" } }}>
-      <Stack gap="$10">
+    <Box as="section" id="workflow" css={{ paddingBlock: "$16" }}>
+      <Container>
+        <Stack gap="$10">
         <Stack gap="$3" css={{ maxWidth: "$reading" }}>
           <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Agent workflow</Text>
           <Heading size="h2">From intent to a reviewed release in three steps.</Heading>
@@ -29,7 +29,8 @@ export function WorkflowSection() {
             </Card>
           ))}
         </Grid>
-      </Stack>
-    </MarketingSection>
+        </Stack>
+      </Container>
+    </Box>
   );
 }
