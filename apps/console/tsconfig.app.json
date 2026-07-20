@@ -28,6 +28,10 @@
       "@paul/ui-patterns/marketing": [
         "../../../../../design-system/packages/ui_patterns/src/marketing.ts",
         "../../.vercel-design-system/packages/ui_patterns/src/marketing.ts"
+      ],
+      "@paul/ui-patterns/data": [
+        "../../../../../design-system/packages/ui_patterns/src/data.ts",
+        "../../.vercel-design-system/packages/ui_patterns/src/data.ts"
       ]
     }
   },
