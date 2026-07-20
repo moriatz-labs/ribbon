@@ -203,17 +203,17 @@ UI changes additionally require browser checks at 375, 768, 1440, and 1920 pixel
 
 ## Release
 
-Production release is automatic after a reviewed merge to `main`:
+Production release is manual by design:
 
 1. Create a feature branch.
 2. Commit only the requested scope.
 3. Push and open a pull request.
 4. Wait for `CI` to pass.
 5. Merge the reviewed pull request.
-6. Let the `CI` workflow rerun its gates and deploy the verified artifact from `main`.
+6. Dispatch `Release VSCD` from the merged `main` branch.
 7. Verify the Vercel deployment, `vscd.moriatz.com`, DNS, TLS, browser console, and registry URL.
 
-Local production deployment is forbidden. The deploy job runs only on pushes to `main`, after workspace and Supabase RLS gates pass, then builds once and deploys the verified prebuilt artifact.
+Local production deployment is forbidden. The release workflow builds once and deploys the verified prebuilt artifact.
 
 ## Agent contract
 

@@ -1,40 +1,26 @@
-import { Heading, Stack, Text } from "@paul/ui-core/marketing";
-import { CloudIcon, DatabaseIcon, GlobeIcon, MailIcon } from "@paul/ui-icons";
-import { BentoGrid, MarketingSection } from "@paul/ui-patterns/marketing";
+import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
 import { PROVIDER_CAPABILITIES } from "../constants";
-
-const providerIcons = {
-  dns: <GlobeIcon aria-hidden="true" />,
-  backend: <DatabaseIcon aria-hidden="true" />,
-  deployment: <CloudIcon aria-hidden="true" />,
-  mail: <MailIcon aria-hidden="true" />,
-} as const;
+import { ProviderRail } from "./ProviderRail";
 
 export function ProvidersSection() {
   return (
-    <MarketingSection id="providers">
-      <Stack gap="$10">
-        <Stack gap="$3" css={{ maxWidth: "$reading", marginInline: "auto", textAlign: "center" }}>
-          <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Capability slots</Text>
-          <Heading size="h2" css={{ fontSize: "$2xl", lineHeight: "$tight", "@md": { fontSize: "$3xl" } }}>
-            Change one provider without redrawing the product.
-          </Heading>
-          <Text size="lg" css={{ color: "$mutedForeground" }}>
-            Every slot owns one operational contract, so infrastructure choices stay explicit and the application stays provider-neutral.
-          </Text>
-        </Stack>
-        <BentoGrid
-          label="Provider capabilities"
-          items={PROVIDER_CAPABILITIES.map((capability) => ({
-            id: capability.id,
-            eyebrow: `${capability.defaultProvider} / ${capability.alternativeProvider}`,
-            title: capability.label,
-            description: capability.role,
-            icon: providerIcons[capability.id],
-            size: capability.id === "dns" || capability.id === "mail" ? "wide" : undefined,
-          }))}
-        />
-      </Stack>
-    </MarketingSection>
+    <Box as="section" id="providers" className="landing-section landing-providers" aria-labelledby="providers-title">
+      <Container>
+        <Grid columns={{ initial: "1fr", lg: "minmax(15rem, .58fr) minmax(0, 1.42fr)" }} gap="$10">
+          <Stack gap="$4" className="landing-section-copy">
+            <Text size="xs" className="landing-kicker landing-kicker-inverse">Capability slots</Text>
+            <Heading id="providers-title" size="h2">Replace one provider without redrawing the product.</Heading>
+            <Text color="$mutedForeground">
+              Each slot owns one operational contract. The browser stays provider-neutral; infrastructure choices stay explicit.
+            </Text>
+          </Stack>
+          <div className="provider-rail-list">
+            {PROVIDER_CAPABILITIES.map((capability, index) => (
+              <ProviderRail capability={capability} index={index} key={capability.id} />
+            ))}
+          </div>
+        </Grid>
+      </Container>
+    </Box>
   );
 }

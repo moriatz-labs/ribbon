@@ -11,10 +11,7 @@ concurrency:
 
 jobs:
   workspace:
-    name: Workspace gates
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,10 +33,7 @@ jobs:
       - run: pnpm codex:check
 
   rls:
-    name: Supabase RLS gates
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
@@ -47,98 +41,4 @@ jobs:
           version: 2.107.0
       - run: supabase start
       - run: supabase test db
-
-  deploy-console:
-    name: Build and deploy production
-    needs: [workspace, rls]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.7.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Prepare pinned design system
-        run: pnpm prepare:design-system
-        env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
-      - name: Normalize Vercel token
-        env:
-          VERCEL_TOKEN_RAW: ${{ secrets.VERCEL_TOKEN }}
-        shell: bash
-        run: |
-          vercel_token="$(printf '%s' "$VERCEL_TOKEN_RAW" | sed '1s/^\xEF\xBB\xBF//; s/\r$//')"
-          if [ -z "$vercel_token" ]; then
-            echo "::error title=Missing Vercel secret::VERCEL_TOKEN is empty or unavailable."
-            exit 1
-          fi
-          echo "::add-mask::$vercel_token"
-          printf 'VERCEL_TOKEN=%s\n' "$vercel_token" >> "$GITHUB_ENV"
-      - name: Validate deployment secrets
-        env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        shell: bash
-        run: |
-          missing=0
-          if [ -z "$DESIGN_SYSTEM_DEPLOY_KEY" ] && [ -z "$DESIGN_SYSTEM_GITHUB_TOKEN" ]; then
-            echo "::error title=Missing design-system credential::Provide DESIGN_SYSTEM_DEPLOY_KEY or DESIGN_SYSTEM_GITHUB_TOKEN."
-            missing=1
-          fi
-          for name in VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_TOKEN; do
-            if [ -z "${!name}" ]; then
-              echo "::error title=Missing deployment secret::$name is empty or unavailable."
-              missing=1
-            fi
-          done
-          exit "$missing"
-      - name: Pull Vercel settings
-        working-directory: apps/console
-        run: pnpm dlx vercel@50.28.0 pull --yes --environment=production --token "$VERCEL_TOKEN"
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - name: Build once
-        working-directory: apps/console
-        shell: bash
-        run: |
-          pnpm dlx vercel@50.28.0 build --prod --token "$VERCEL_TOKEN" 2>&1 | tee /tmp/vercel-build.log
-          if grep -Eq 'error TS[0-9]+' /tmp/vercel-build.log; then
-            echo "Vercel emitted TypeScript errors while packaging functions."
-            exit 1
-          fi
-        env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - name: Deploy the verified artifact
-        id: deploy
-        working-directory: apps/console
-        shell: bash
-        run: echo "url=$(pnpm dlx vercel@50.28.0 deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")" >> "$GITHUB_OUTPUT"
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - name: Publish deployment URL
-        shell: bash
-        run: |
-          printf '{"project":"vscd","url":"%s","commit":"%s"}\n' "${{ steps.deploy.outputs.url }}" "${{ github.sha }}" > deployment.json
-          cat deployment.json >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: deployment-url
-          path: deployment.json
-          retention-days: 30
 

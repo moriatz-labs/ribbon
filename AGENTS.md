@@ -5,7 +5,7 @@ manifest: vscd.json
 manifest_version: 2
 package_manager: pnpm@11.7.0
 node: 24
-production_release: github-actions-main
+production_release: github-actions-manual
 ---
 
 # VSCD Agent Contract
@@ -182,7 +182,7 @@ Do not declare completion while a relevant check is failing or unrun.
 
 ## 11. Release boundary
 
-Production release is automatic from reviewed `main`.
+Production release is manual and reviewed.
 
 Required sequence:
 
@@ -192,12 +192,12 @@ Required sequence:
 4. Open a pull request.
 5. Wait for required checks.
 6. Merge the pull request.
-7. Let `.github/workflows/ci.yml` rerun all gates and deploy the verified prebuilt artifact from the merged `main` commit.
+7. Dispatch `.github/workflows/release.yml` on merged `main`.
 8. Wait for the workflow to finish.
 9. Verify deployment status, custom domain, DNS, TLS, browser console, and registry URL.
 10. Delete the merged feature branch when safe.
 
-Never deploy production from a local agent session or from a pull-request event. Production deployment may run only after all required jobs pass on a push to `main`.
+Never deploy production from a local agent session. Never re-enable push-triggered production releases without an explicit user request to change that policy.
 
 ## 12. Completion definition
 
