@@ -1,5 +1,6 @@
-import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
-import { CheckIcon } from "@paul/ui-icons";
+import { Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { ArrowRightIcon, CheckIcon } from "@paul/ui-icons";
+import { CodeDemo, MarketingActionLink, MarketingSection } from "@paul/ui-patterns/marketing";
 import { MANIFEST_EXAMPLE } from "../constants";
 
 const guarantees = [
@@ -11,36 +12,36 @@ const guarantees = [
 
 export function ManifestSection() {
   return (
-    <Box as="section" id="manifest" className="landing-section landing-manifest" aria-labelledby="manifest-title">
-      <Container>
-        <Grid columns={{ initial: "1fr", lg: "minmax(0, 1fr) minmax(22rem, .8fr)" }} gap="$10">
-          <div className="manifest-code" aria-label="Example VSCD version 2 manifest">
-            <div className="manifest-code-bar">
-              <span>vscd.json</span>
-              <span>manifest v2</span>
-            </div>
-            <pre><code>{MANIFEST_EXAMPLE}</code></pre>
-          </div>
-          <Stack gap="$5" className="manifest-copy">
-            <Text size="xs" color="$mutedForeground" className="landing-kicker">Machine-readable contract</Text>
-            <Heading id="manifest-title" size="h2">The repository explains itself before an agent changes it.</Heading>
-            <Text color="$mutedForeground">
-              `vscd.json`, `README.md`, and `AGENTS.md` describe the same boundaries: what is selectable, what is mandatory, and what must be verified before release.
+    <MarketingSection id="manifest" muted css={{ paddingBlock: "$16", "@lg": { paddingBlock: "$16" } }}>
+      <Grid columns={{ initial: "1fr", lg: "minmax(0, 1fr) minmax(22rem, .8fr)" }} gap="$10" css={{ alignItems: "center" }}>
+        <CodeDemo
+          title="Repository contract"
+          snippets={[
+            { id: "manifest", label: "vscd.json", language: "JSON", code: MANIFEST_EXAMPLE },
+            { id: "verify", label: "Verify", language: "Shell", code: "pnpm vscd check ../my-app" },
+          ]}
+        />
+        <Stack gap="$6">
+          <Stack gap="$3" css={{ maxWidth: "$reading" }}>
+            <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Machine-readable contract</Text>
+            <Heading size="h2">The repository states the rules before an agent changes code.</Heading>
+            <Text size="lg" css={{ color: "$mutedForeground" }}>
+              vscd.json selects providers. AGENTS.md defines the boundaries. Automated checks prove the result before release.
             </Text>
-            <ul className="manifest-guarantees">
-              {guarantees.map((guarantee) => (
-                <li key={guarantee}>
-                  <CheckIcon aria-hidden="true" size={17} />
-                  <span>{guarantee}</span>
-                </li>
-              ))}
-            </ul>
-            <a className="landing-text-link" href="https://github.com/Paul-M-Kallarackal/VSCD/blob/main/README.md" target="_blank" rel="noreferrer">
-              Read the repository guide
-            </a>
           </Stack>
-        </Grid>
-      </Container>
-    </Box>
+          <Stack as="ul" gap="$3" css={{ margin: 0, padding: 0, listStyle: "none" }}>
+            {guarantees.map((guarantee) => (
+              <Flex as="li" alignItems="center" gap="$3" key={guarantee}>
+                <CheckIcon aria-hidden="true" size={17} color="var(--success)" />
+                <Text size="sm">{guarantee}</Text>
+              </Flex>
+            ))}
+          </Stack>
+          <Flex>
+            <MarketingActionLink action={{ label: "Read the repository guide", href: "https://github.com/Paul-M-Kallarackal/VSCD/blob/main/README.md", external: true, variant: "outline", icon: <ArrowRightIcon aria-hidden="true" size={18} /> }} />
+          </Flex>
+        </Stack>
+      </Grid>
+    </MarketingSection>
   );
 }

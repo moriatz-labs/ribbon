@@ -1,3 +1,4 @@
+import { Box } from "@paul/ui-core";
 import { HeroSection } from "../components/HeroSection";
 import { LandingFooter } from "../components/LandingFooter";
 import { LandingHeader } from "../components/LandingHeader";
@@ -7,7 +8,7 @@ import { WorkflowSection } from "../components/WorkflowSection";
 
 export function PublicLandingPage() {
   return (
-    <div className="landing-page">
+    <Box css={{ minHeight: "100vh", overflow: "hidden", background: "$background", color: "$foreground" }}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       <LandingHeader />
       <main id="main-content">
@@ -17,6 +18,6 @@ export function PublicLandingPage() {
         <ManifestSection />
       </main>
       <LandingFooter />
-    </div>
+    </Box>
   );
 }

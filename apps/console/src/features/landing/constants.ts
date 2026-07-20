@@ -4,28 +4,28 @@ export const PROVIDER_CAPABILITIES: readonly ProviderCapability[] = [
   {
     id: "dns",
     label: "DNS",
-    role: "Own the public hostname without silently replacing conflicting records.",
+    role: "Own the public hostname and reject conflicting DNS records.",
     defaultProvider: "Hostinger",
     alternativeProvider: "Cloudflare",
   },
   {
     id: "backend",
     label: "Backend",
-    role: "Keep identity, data, and object authorization behind one adapter boundary.",
+    role: "Keep identity, data, and storage behind one provider-neutral boundary.",
     defaultProvider: "Supabase",
     alternativeProvider: "Firebase",
   },
   {
     id: "deployment",
     label: "Deployment",
-    role: "Build once, verify the artifact, and release through reviewed automation.",
+    role: "Build once, verify once, then deploy the same reviewed artifact.",
     defaultProvider: "Vercel",
     alternativeProvider: "Netlify",
   },
   {
     id: "mail",
     label: "Mail",
-    role: "Keep sign-in delivery server-side and selected independently from the backend.",
+    role: "Choose delivery independently and keep every credential server-side.",
     defaultProvider: "Hostinger Mail",
     alternativeProvider: "Backend managed",
   },
@@ -33,19 +33,19 @@ export const PROVIDER_CAPABILITIES: readonly ProviderCapability[] = [
 
 export const WORKFLOW_STEPS: readonly WorkflowStep[] = [
   {
-    number: "01",
+    number: "Step 1",
     title: "Describe the stack",
     description: "Choose a provider for each capability in one versioned manifest.",
     command: "pnpm vscd providers",
   },
   {
-    number: "02",
+    number: "Step 2",
     title: "Generate the product boundary",
     description: "Scaffold only the selected adapters, policy tests, and release workflow.",
     command: "pnpm vscd init my-app",
   },
   {
-    number: "03",
+    number: "Step 3",
     title: "Prove it can ship",
     description: "Run provider-aware checks before a reviewed production release.",
     command: "pnpm vscd check ../my-app",
