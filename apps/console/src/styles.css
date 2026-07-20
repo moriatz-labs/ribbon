@@ -12,8 +12,6 @@
   --space-8: 2rem;
   --space-10: 2.5rem;
   --space-12: 3rem;
-  --sizes-8: var(--space-8);
-  --sizes-12: var(--space-12);
 }
 
 * { box-sizing: border-box; }
