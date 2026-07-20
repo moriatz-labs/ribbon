@@ -1,26 +1,25 @@
-import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { MarketingSection } from "@paul/ui-patterns/marketing";
 import { PROVIDER_CAPABILITIES } from "../constants";
-import { ProviderRail } from "./ProviderRail";
+import { ProviderCard } from "./ProviderCard";
 
 export function ProvidersSection() {
   return (
-    <Box as="section" id="providers" className="landing-section landing-providers" aria-labelledby="providers-title">
-      <Container>
-        <Grid columns={{ initial: "1fr", lg: "minmax(15rem, .58fr) minmax(0, 1.42fr)" }} gap="$10">
-          <Stack gap="$4" className="landing-section-copy">
-            <Text size="xs" className="landing-kicker landing-kicker-inverse">Capability slots</Text>
-            <Heading id="providers-title" size="h2">Replace one provider without redrawing the product.</Heading>
-            <Text color="$mutedForeground">
-              Each slot owns one operational contract. The browser stays provider-neutral; infrastructure choices stay explicit.
-            </Text>
-          </Stack>
-          <div className="provider-rail-list">
-            {PROVIDER_CAPABILITIES.map((capability, index) => (
-              <ProviderRail capability={capability} index={index} key={capability.id} />
-            ))}
-          </div>
+    <MarketingSection id="providers" muted css={{ paddingBlock: "$16", "@lg": { paddingBlock: "$16" } }}>
+      <Stack gap="$10">
+        <Stack gap="$3" css={{ maxWidth: "$reading" }}>
+          <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Four independent capabilities</Text>
+          <Heading size="h2">Choose infrastructure by capability.</Heading>
+          <Text size="lg" css={{ color: "$mutedForeground" }}>
+            Each capability has one contract and an explicit provider choice. Change one without rewriting the browser or release model.
+          </Text>
+        </Stack>
+        <Grid columns={{ initial: "1fr", md: "repeat(2, minmax(0, 1fr))" }} gap="$5">
+          {PROVIDER_CAPABILITIES.map((capability) => (
+            <ProviderCard capability={capability} key={capability.id} />
+          ))}
         </Grid>
-      </Container>
-    </Box>
+      </Stack>
+    </MarketingSection>
   );
 }
