@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 
 const repositoryRoot = path.resolve(__dirname, "../..");
 const manifest = JSON.parse(readFileSync(path.join(repositoryRoot, "vscd.json"), "utf8")) as {
@@ -16,7 +15,7 @@ const designSystemRoot = existsSync(path.join(localDesignSystem, "packages/ui_co
   : remoteDesignSystem;
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   resolve: {
     dedupe: ["react", "react-dom"],
     alias: [

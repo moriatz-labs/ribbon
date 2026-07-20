@@ -10,7 +10,6 @@ export function LandingFooter() {
           <Flex gap="$1" wrap="wrap">
             <MarketingActionLink action={{ label: "Portfolio", href: "https://paul.moriatz.com", external: true, variant: "ghost" }} />
             <MarketingActionLink action={{ label: "GitHub", href: "https://github.com/Paul-M-Kallarackal/VSCD", external: true, variant: "ghost" }} />
-            <MarketingActionLink action={{ label: "Project registry", href: "/console", variant: "ghost" }} />
           </Flex>
         </Flex>
       </Container>

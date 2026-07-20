@@ -59,10 +59,8 @@ Only the repository-root manifest may use `projectType: "control-plane"`. Genera
 
 | Path | Owns |
 |---|---|
-| `apps/console/src/App.tsx` | Top-level route composition only |
+| `apps/console/src/App.tsx` | Public-site composition root only |
 | `apps/console/src/features/landing/` | Public product site at `/` |
-| `apps/console/src/features/console/` | Console composition at `/console` |
-| `apps/console/src/pages/` | Existing registry and authentication pages |
 | `apps/console/public/images/` | Public, repository-owned media referenced by web-relative paths |
 | `packages/core/` | Manifest types, validation, normalization, registry, provider contracts |
 | `packages/cli/` | Commands, orchestration, local credential loading, checks |
@@ -107,7 +105,7 @@ Forbidden:
 - A second date-picker trigger.
 - `transition: all`, scale-from-zero entrances, unbounded animation, or decorative infinite motion.
 
-Existing control-plane console code may be migrated incrementally, but new public UI must follow this contract.
+The authenticated browser console is not currently shipped. New public UI must follow this contract.
 
 ## 7. Provider invariants
 
@@ -158,8 +156,8 @@ Only publishable provider configuration may use a `VITE_` prefix. Credential fil
 | Scaffold | `pnpm vscd init <slug> --target <path>` |
 | Provision DNS | `pnpm vscd dns <project-path>` |
 | Validate a managed project | `pnpm vscd check <project-path>` |
-| Run console locally | `pnpm dev:console` |
-| Console typecheck | `pnpm --filter @vscd/console typecheck` |
+| Run public site locally | `pnpm dev:console` |
+| Public-site typecheck | `pnpm --filter @vscd/console typecheck` |
 | Workspace gate | `pnpm check` |
 | Control-plane gate | `pnpm codex:check` |
 | Supabase policy tests | `supabase test db` |
@@ -175,7 +173,7 @@ Use the exact package scripts as the command source of truth.
 | CLI behavior | Focused CLI tests, scaffold matrix where relevant, workspace gate |
 | Template | Scaffold a temporary application, run its tests/build, run `vscd check` |
 | Supabase policy | `supabase test db` |
-| Public UI or console | Typecheck, production build, browser checks at 375/768/1440/1920, no console errors or overflow |
+| Public UI | Typecheck, production build, browser checks at 375/768/1440/1920, no browser errors or overflow |
 | Release-facing change | All applicable checks plus `pnpm check` and `pnpm codex:check` |
 
 Do not declare completion while a relevant check is failing or unrun.
@@ -194,7 +192,7 @@ Required sequence:
 6. Merge the pull request.
 7. Let `.github/workflows/ci.yml` rerun all gates and deploy the verified prebuilt artifact from the merged `main` commit.
 8. Wait for the workflow to finish.
-9. Verify deployment status, custom domain, DNS, TLS, browser console, and registry URL.
+9. Verify deployment status, custom domain, DNS, TLS, and the public site in the browser.
 10. Delete the merged feature branch when safe.
 
 Never deploy production from a local agent session or from a pull-request event. Production deployment may run only after all required jobs pass on a push to `main`.
