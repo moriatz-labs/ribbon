@@ -448,7 +448,7 @@ code { font-family: var(--font-mono); font-size: .75rem; }
 }
 
 .provider-rail-number {
-  color: color-mix(in srgb, var(--primary-foreground) 42%, transparent);
+  color: color-mix(in srgb, var(--primary-foreground) 64%, transparent);
   font-family: var(--font-mono);
   font-size: .66rem;
 }
@@ -488,7 +488,7 @@ code { font-family: var(--font-mono); font-size: .75rem; }
 }
 
 .provider-rail-options span:nth-child(2) {
-  color: color-mix(in srgb, var(--primary-foreground) 38%, transparent);
+  color: color-mix(in srgb, var(--primary-foreground) 60%, transparent);
 }
 
 .workflow-grid {

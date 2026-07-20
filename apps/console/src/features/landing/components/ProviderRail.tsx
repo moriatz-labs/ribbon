@@ -17,7 +17,7 @@ export function ProviderRail({ capability, index }: { capability: ProviderCapabi
         <span className="provider-rail-icon">{capabilityIcon(capability.id)}</span>
         <Heading size="h3">{capability.label}</Heading>
       </Flex>
-      <Text size="sm" color="$mutedForeground" className="provider-rail-copy">{capability.role}</Text>
+      <Text size="sm" className="provider-rail-copy">{capability.role}</Text>
       <div className="provider-rail-options" aria-label={`${capability.label} providers`}>
         <span>{capability.defaultProvider}</span>
         <span aria-hidden="true">or</span>
