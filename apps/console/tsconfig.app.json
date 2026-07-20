@@ -28,6 +28,14 @@
       "@paul/ui-patterns/marketing": [
         "../../../../../design-system/packages/ui_patterns/src/marketing.ts",
         "../../.vercel-design-system/packages/ui_patterns/src/marketing.ts"
+      ],
+      "@paul/ui-patterns/navigation": [
+        "../../../../../design-system/packages/ui_patterns/src/components/FluidGlassNavbar.tsx",
+        "../../.vercel-design-system/packages/ui_patterns/src/components/FluidGlassNavbar.tsx"
+      ],
+      "@paul/ui-patterns/external-links": [
+        "../../../../../design-system/packages/ui_patterns/src/components/ExternalLinkList.tsx",
+        "../../.vercel-design-system/packages/ui_patterns/src/components/ExternalLinkList.tsx"
       ]
     }
   },

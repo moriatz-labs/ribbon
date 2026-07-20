@@ -18,11 +18,13 @@ const designSystemRoot = existsSync(path.join(localDesignSystem, "packages/ui_co
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    dedupe: ["react", "react-dom"],
+    dedupe: ["react", "react-dom", "react-router-dom"],
     alias: [
       { find: /^@paul\/ui-core\/marketing$/, replacement: path.join(designSystemRoot, "packages/ui_core/src/marketing.ts") },
       { find: /^@paul\/ui-core$/, replacement: path.join(designSystemRoot, "packages/ui_core/src/index.ts") },
       { find: /^@paul\/ui-icons$/, replacement: path.join(designSystemRoot, "packages/ui_icons/src/index.ts") },
+      { find: /^@paul\/ui-patterns\/external-links$/, replacement: path.join(designSystemRoot, "packages/ui_patterns/src/components/ExternalLinkList.tsx") },
+      { find: /^@paul\/ui-patterns\/navigation$/, replacement: path.join(designSystemRoot, "packages/ui_patterns/src/components/FluidGlassNavbar.tsx") },
       { find: /^@paul\/ui-patterns\/marketing$/, replacement: path.join(designSystemRoot, "packages/ui_patterns/src/marketing.ts") },
       { find: /^@paul\/ui-patterns$/, replacement: path.join(designSystemRoot, "packages/ui_patterns/src/index.tsx") },
       { find: "@paul/ui-themes/portfolio.css", replacement: path.join(designSystemRoot, "packages/ui_themes/src/portfolio.css") },
