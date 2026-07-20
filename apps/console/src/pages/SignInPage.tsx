@@ -11,9 +11,9 @@ export function SignInPage() {
     <main className="sign-in-page">
       <section className="sign-in-card" aria-labelledby="sign-in-title">
         <div className="sign-in-mark" aria-hidden="true"><LockKeyhole size={20} /></div>
-        <p className="eyebrow">VSCD control plane</p>
-        <h1 id="sign-in-title">Your projects,<br />behind one door.</h1>
-        <p className="sign-in-copy">Sign in with an email link. Supabase RLS keeps provider state and project URLs scoped to your account.</p>
+        <p className="eyebrow">Project registry</p>
+        <h1 id="sign-in-title">Sign in to manage your projects.</h1>
+        <p className="sign-in-copy">Use your email to access provider selections, deployment status, and project URLs scoped to your account.</p>
         <form onSubmit={async (event) => {
           event.preventDefault();
           setSubmitting(true);
@@ -42,7 +42,7 @@ export function SignInPage() {
         </form>
         {message ? <p className="sign-in-message" role="status">{message}</p> : null}
       </section>
-      <p className="sign-in-foot">Deployment <span /> Backend <span /> DNS <span /> Design</p>
+      <p className="sign-in-foot">DNS <span /> Backend <span /> Deployment <span /> Mail</p>
     </main>
   );
 }
