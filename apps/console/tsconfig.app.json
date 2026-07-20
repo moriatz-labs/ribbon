@@ -13,6 +13,10 @@
         "../../../../../design-system/packages/ui_core/src/index.ts",
         "../../.vercel-design-system/packages/ui_core/src/index.ts"
       ],
+      "@paul/ui-core/marketing": [
+        "../../../../../design-system/packages/ui_core/src/marketing.ts",
+        "../../.vercel-design-system/packages/ui_core/src/marketing.ts"
+      ],
       "@paul/ui-icons": [
         "../../../../../design-system/packages/ui_icons/src/index.ts",
         "../../.vercel-design-system/packages/ui_icons/src/index.ts"
@@ -20,6 +24,10 @@
       "@paul/ui-patterns": [
         "../../../../../design-system/packages/ui_patterns/src/index.tsx",
         "../../.vercel-design-system/packages/ui_patterns/src/index.tsx"
+      ],
+      "@paul/ui-patterns/marketing": [
+        "../../../../../design-system/packages/ui_patterns/src/marketing.ts",
+        "../../.vercel-design-system/packages/ui_patterns/src/marketing.ts"
       ]
     }
   },
