@@ -1,4 +1,5 @@
-import { MarketingActionLink, MarketingNav } from "@paul/ui-patterns/marketing";
+import { MarketingActionLink } from "./MarketingActionLink";
+import { MarketingNav } from "./MarketingNav";
 
 export function LandingHeader() {
   return (

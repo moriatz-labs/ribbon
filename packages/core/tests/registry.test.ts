@@ -1,6 +1,6 @@
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { projectManifestSchema, readRegistry, upsertProject, type ProjectManifest } from "../src/index.js";
 
@@ -20,17 +20,8 @@ const project: ProjectManifest = {
       ttl: 300
     },
     designSystem: {
-      source: "../design-system",
-      repository: "https://github.com/Paul-M-Kallarackal/design-system",
-      commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
-      packages: [
-        "@paul/ui-core",
-        "@paul/ui-icons",
-        "@paul/ui-patterns",
-        "@paul/ui-tokens",
-        "@paul/ui-themes"
-      ],
-      requiredComponents: ["DatePicker"]
+      repository: "https://github.com/moriatz-labs/strawn",
+      packages: ["strawn", "strawn-icons"]
     }
   },
   urls: {},
@@ -91,21 +82,19 @@ describe("registry", () => {
     ).rejects.toThrow("Hostinger hostname must be a subdomain");
   });
 
-  it("rejects machine-specific design-system paths", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
-
-    await expect(
-      upsertProject(join(directory, "registry.json"), {
+  it("rejects deprecated private design-system metadata", () => {
+    expect(() =>
+      projectManifestSchema.parse({
         ...project,
         providers: {
           ...project.providers,
           designSystem: {
             ...project.providers.designSystem,
-            source: resolve("design-system")
+            source: "../design-system"
           }
         }
       })
-    ).rejects.toThrow("relative to the project repository");
+    ).toThrow("Unrecognized key");
   });
 
   it("does not allow generated apps to claim the control-plane exemption", async () => {

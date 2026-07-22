@@ -1,4 +1,4 @@
-import { Badge, Box, Card, CardContent, CardHeader, Container, Grid, Heading, Stack, Surface, Text } from "@paul/ui-core";
+import { Badge, Box, Card, CardContent, CardHeader, Container, Grid, Heading, Stack, Surface, Text } from "strawn";
 import { WORKFLOW_STEPS } from "../constants";
 
 export function WorkflowSection() {

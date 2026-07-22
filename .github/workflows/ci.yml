@@ -27,11 +27,6 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Prepare pinned design system
-        run: pnpm prepare:design-system
-        env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
       - run: pnpm turbo run lint typecheck test build --affected
       - run: pnpm codex:check
 
@@ -66,11 +61,6 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Prepare pinned design system
-        run: pnpm prepare:design-system
-        env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
       - name: Normalize Vercel token
         env:
           VERCEL_TOKEN_RAW: ${{ secrets.VERCEL_TOKEN }}
@@ -85,17 +75,11 @@ jobs:
           printf 'VERCEL_TOKEN=%s\n' "$vercel_token" >> "$GITHUB_ENV"
       - name: Validate deployment secrets
         env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         shell: bash
         run: |
           missing=0
-          if [ -z "$DESIGN_SYSTEM_DEPLOY_KEY" ] && [ -z "$DESIGN_SYSTEM_GITHUB_TOKEN" ]; then
-            echo "::error title=Missing design-system credential::Provide DESIGN_SYSTEM_DEPLOY_KEY or DESIGN_SYSTEM_GITHUB_TOKEN."
-            missing=1
-          fi
           for name in VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_TOKEN; do
             if [ -z "${!name}" ]; then
               echo "::error title=Missing deployment secret::$name is empty or unavailable."
@@ -119,8 +103,6 @@ jobs:
             exit 1
           fi
         env:
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
-          DESIGN_SYSTEM_GITHUB_TOKEN: ${{ secrets.DESIGN_SYSTEM_GITHUB_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Deploy the verified artifact

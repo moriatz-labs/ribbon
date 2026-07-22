@@ -2,11 +2,6 @@ import { z } from "zod";
 
 const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const urlSchema = z.string().url();
-const repositoryRelativePathSchema = z.string().min(1).refine(
-  (value) => !/^(?:[a-z][a-z0-9+.-]*:|[\\/]{1,2})/i.test(value),
-  { message: "Design-system source must be relative to the project repository." }
-);
-
 export const projectStatusSchema = z.enum([
   "draft",
   "local",
@@ -79,21 +74,9 @@ const mailProviderSchema = z.discriminatedUnion("provider", [
 ]);
 
 const designSystemProviderSchema = z.object({
-  source: repositoryRelativePathSchema,
-  repository: z.string().url(),
-  commit: z.string().regex(/^[0-9a-f]{40}$/),
-  packages: z.tuple([
-    z.literal("@paul/ui-core"),
-    z.literal("@paul/ui-icons"),
-    z.literal("@paul/ui-patterns"),
-    z.literal("@paul/ui-tokens"),
-    z.literal("@paul/ui-themes")
-  ]),
-  requiredComponents: z.array(z.string().min(1)).refine(
-    (components) => components.includes("DatePicker"),
-    { message: "VSCD projects must require Paul's DatePicker for date fields." }
-  )
-});
+  repository: z.literal("https://github.com/moriatz-labs/strawn"),
+  packages: z.tuple([z.literal("strawn"), z.literal("strawn-icons")])
+}).strict();
 
 const providersSchema = z.object({
   deployment: z.discriminatedUnion("provider", [vercelProviderSchema, netlifyProviderSchema]),

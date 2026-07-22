@@ -5,5 +5,9 @@ packages:
 allowBuilds:
   esbuild: true
 
+minimumReleaseAgeExclude:
+  - strawn-icons@0.1.0
+  - strawn@0.1.0
+
 onlyBuiltDependencies:
   - esbuild

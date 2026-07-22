@@ -5,13 +5,12 @@
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "build": "pnpm prepare:design-system && turbo run build",
-    "check": "pnpm prepare:design-system && turbo run lint typecheck test build",
+    "build": "turbo run build",
+    "check": "turbo run lint typecheck test build",
     "codex:check": "pnpm --filter @vscd/core build && pnpm vscd check .",
     "dev": "turbo run dev",
     "dev:console": "pnpm --filter @vscd/console dev",
     "lint": "turbo run lint",
-    "prepare:design-system": "node scripts/prepare-design-system.mjs",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "vscd": "tsx packages/cli/src/cli.ts"
