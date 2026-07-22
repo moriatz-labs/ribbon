@@ -4,7 +4,7 @@
 
 VSCD manages each product as a separate repository and provider unit. The manifest selects adapters by capability: DNS, deployment, backend, and mail. Hostinger + Supabase + Vercel remains the basic profile, while Cloudflare + Firebase + Netlify is an equally valid built-in profile. The choices can be mixed independently.
 
-Local builds resolve Paul's design system from the repository-relative manifest source or `DESIGN_SYSTEM_SOURCE`. Remote builds clone the pinned commit into `.vercel-design-system`.
+Local and remote builds install Strawn from npm through the frozen application lockfile.
 
 ## System Map
 
@@ -17,7 +17,7 @@ flowchart LR
     BE --> AUTH["Identity + authorization"]
     BE --> DATA["Records + object storage"]
 
-    DS["Paul design system"] -. "pinned build input" .-> APP
+    DS["Strawn packages"] -. "versioned npm dependency" .-> APP
     CDX["Codex + vscd-build"] --> CLI["VSCD CLI"]
     CLI --> CATALOG["Provider catalog + contracts"]
     CATALOG --> DNS
@@ -33,7 +33,7 @@ flowchart LR
 | Backend provider | Identity, record authorization, object access | User identity at runtime; admin credentials only for trusted operations |
 | Deployment provider | Static app and optional serverless endpoints | Vercel or Netlify credentials in GitHub Actions |
 | DNS provider | Authoritative CNAME | Hostinger or Cloudflare token in the control plane |
-| GitHub Actions | Verified production build and selected deployment workflow | Selected adapter secrets and design-system deploy key |
+| GitHub Actions | Verified production build and selected deployment workflow | Selected adapter secrets |
 | Codex/VSCD | Scaffold, check, inventory, registration, URL handoff | Local authenticated CLI sessions; no logged secret values |
 
 ## Build Sequence
@@ -78,7 +78,7 @@ VSCD repository
 Generated project
   src/lib/backend.ts  selected backend boundary
   supabase/ or *.rules selected backend authorization artifacts
-  scripts/             manifest-driven DNS and build preparation
+  scripts/             manifest-driven DNS configuration
   .github/workflows/   selected deployment adapter
   vscd.json            capability selections, safe metadata, URLs
 ```

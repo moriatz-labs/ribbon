@@ -98,17 +98,8 @@ export async function provisionHostingerCname({
         ttl: 300
       },
       designSystem: {
-        source: "../design-system",
-        repository: "https://github.com/Paul-M-Kallarackal/design-system",
-        commit: "0000000000000000000000000000000000000000",
-        packages: [
-          "@paul/ui-core",
-          "@paul/ui-icons",
-          "@paul/ui-patterns",
-          "@paul/ui-tokens",
-          "@paul/ui-themes"
-        ],
-        requiredComponents: ["DatePicker"]
+        repository: "https://github.com/moriatz-labs/strawn",
+        packages: ["strawn", "strawn-icons"]
       }
     },
     urls: {},

@@ -16,7 +16,6 @@ import { runCodexCheck } from "./check.js";
 import {
   loadVscdCredentials,
   saveCloudflareCredentials,
-  saveDesignSystemCredentials,
   saveHostingerCredentials
 } from "./credentials.js";
 import { provisionDnsCname } from "./dns.js";
@@ -35,7 +34,7 @@ Default stack: Hostinger DNS + Supabase + Vercel
 Commands:
   providers [--json]
   doctor [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>]
-  auth <hostinger|cloudflare|design-system>
+  auth <hostinger|cloudflare>
   inventory [--json]
   init <slug> [--title <name>] [--target <path>] [--domain <domain>] [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>] [--no-domain]
   dns [project-path] [--target <hostname>]
@@ -153,16 +152,6 @@ async function main() {
   }
 
   if (command === "auth") {
-    if (firstArgument === "design-system") {
-      const deployKey = process.env.DESIGN_SYSTEM_DEPLOY_KEY;
-      const commit = process.env.DESIGN_SYSTEM_COMMIT;
-      if (!deployKey || !commit) {
-        throw new Error("DESIGN_SYSTEM_DEPLOY_KEY and DESIGN_SYSTEM_COMMIT must be present to import credentials.");
-      }
-      await saveDesignSystemCredentials({ deployKey, commit, path: credentialsPath });
-      console.log(`Stored Paul design-system credentials in ${credentialsPath}`);
-      return;
-    }
     if (firstArgument === "cloudflare") {
       const token = process.env.CLOUDFLARE_API_TOKEN;
       const zoneId = process.env.CLOUDFLARE_ZONE_ID;
@@ -175,7 +164,7 @@ async function main() {
       return;
     }
     if (firstArgument !== "hostinger") {
-      throw new Error("Usage: vscd auth <hostinger|cloudflare|design-system>");
+      throw new Error("Usage: vscd auth <hostinger|cloudflare>");
     }
     const token = process.env.HOSTINGER_API_TOKEN;
     const domain = values.domain ?? process.env.HOSTINGER_DOMAIN;

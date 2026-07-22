@@ -65,14 +65,14 @@ Both workflows use frozen lockfile installs, cancel superseded runs, keep creden
 
 ## Release Gate
 
-`vscd check` fails when the manifest, one lockfile, environment contract, design-system pin, or selected release workflow is missing. It also fails on:
+`vscd check` fails when the manifest, one lockfile, environment contract, Strawn package wiring, or selected release workflow is missing. It also fails on:
 
 - an incomplete DNS configuration or proxied Cloudflare route;
 - a browser-prefixed admin, DNS, mail, or deployment secret;
 - missing Supabase RLS or SQL tests;
 - missing owner-scoped Firebase rules or `firebase.json`;
 - a workflow that does not match the selected deployment provider;
-- a design-system bypass or native date input.
+- an old `@paul/*` dependency, private clone/pin wiring, or a prohibited UI-library bypass.
 
 Product lint, tests, typecheck, build, and provider policy tests remain separate required evidence.
 

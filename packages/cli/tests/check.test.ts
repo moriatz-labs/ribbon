@@ -5,17 +5,8 @@ import { describe, expect, it } from "vitest";
 import { runCodexCheck } from "../src/check.js";
 
 const designSystem = {
-  source: "../design-system",
-  repository: "https://github.com/Paul-M-Kallarackal/design-system",
-  commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
-  packages: [
-    "@paul/ui-core",
-    "@paul/ui-icons",
-    "@paul/ui-patterns",
-    "@paul/ui-tokens",
-    "@paul/ui-themes"
-  ],
-  requiredComponents: ["DatePicker"]
+  repository: "https://github.com/moriatz-labs/strawn",
+  packages: ["strawn", "strawn-icons"]
 };
 
 describe("Codex check", () => {
@@ -114,15 +105,15 @@ describe("Codex check", () => {
     expect(results.find((check) => check.id === "hostinger:mail-api")?.ok).toBe(false);
   });
 
-  it("rejects UI-library bypasses and native date inputs", async () => {
+  it("rejects prohibited UI-library dependencies", async () => {
     const root = await mkdtemp(join(tmpdir(), "vscd-design-system-check-"));
     await mkdir(join(root, "src"), { recursive: true });
     await writeFile(
       join(root, "package.json"),
-      JSON.stringify({ dependencies: { "lucide-react": "latest" } }),
+      JSON.stringify({ dependencies: { "lucide-react": "latest", strawn: "0.1.0", "strawn-icons": "0.1.0" } }),
       "utf8"
     );
-    await writeFile(join(root, ".env.example"), "DESIGN_SYSTEM_COMMIT=fca3a35e26117f708000e8880e6c1fbabbfb3099\n# DESIGN_SYSTEM_DEPLOY_KEY", "utf8");
+    await writeFile(join(root, ".env.example"), "", "utf8");
     await writeFile(join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'", "utf8");
     await writeFile(
       join(root, "src", "App.tsx"),
@@ -150,6 +141,6 @@ describe("Codex check", () => {
     const results = await runCodexCheck(root);
     expect(results.find((check) => check.id === "design-system:no-bypasses")?.ok).toBe(false);
     expect(results.find((check) => check.id === "design-system:imports")?.ok).toBe(false);
-    expect(results.find((check) => check.id === "design-system:test-isolation")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "design-system:legacy-wiring")?.ok).toBe(true);
   });
 });
