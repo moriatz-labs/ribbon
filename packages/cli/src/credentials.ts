@@ -105,4 +105,31 @@ export async function saveCloudflareCredentials({
   return path;
 }
 
-// Strawn is public, so VSCD stores no design-system repository credentials.
+export async function saveDesignSystemCredentials({
+  deployKey,
+  commit,
+  path = process.env.VSCD_CREDENTIALS_PATH ?? defaultCredentialsPath
+}: {
+  deployKey: string;
+  commit: string;
+  path?: string;
+}) {
+  const normalizedKey = deployKey
+    .replace(/^\uFEFF/, "")
+    .replace(/\\n/g, "\n")
+    .replace(/\r/g, "")
+    .replace(/^['\"]|['\"]$/g, "")
+    .trim();
+  if (!normalizedKey.includes("BEGIN OPENSSH PRIVATE KEY")) {
+    throw new Error("DESIGN_SYSTEM_DEPLOY_KEY must be an OpenSSH private key.");
+  }
+  if (!/^[0-9a-f]{40}$/.test(commit)) {
+    throw new Error("DESIGN_SYSTEM_COMMIT must be an exact 40-character Git commit.");
+  }
+
+  const values = await readCredentialValues(path);
+  values.set("DESIGN_SYSTEM_DEPLOY_KEY", normalizedKey.replace(/\n/g, "\\n"));
+  values.set("DESIGN_SYSTEM_COMMIT", commit);
+  await writeCredentialValues(path, values);
+  return path;
+}

@@ -1,5 +1,49 @@
-import { Box, Container, Grid, Heading, Stack, Surface, Text, VisuallyHidden } from "strawn";
+import { Box, Container, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { DataTable, type DataTableColumn } from "@paul/ui-patterns/data";
 import { PROVIDER_CAPABILITIES } from "../constants";
+
+type CapabilityRow = {
+  id: string;
+  capability: string;
+  contract: string;
+  providers: string;
+  defaultProvider: string;
+  alternativeProvider: string;
+};
+
+const rows: CapabilityRow[] = PROVIDER_CAPABILITIES.map((capability) => ({
+  id: capability.id,
+  capability: capability.label,
+  contract: capability.role,
+  providers: `${capability.defaultProvider}, ${capability.alternativeProvider}`,
+  defaultProvider: capability.defaultProvider,
+  alternativeProvider: capability.alternativeProvider,
+}));
+
+const columns: Array<DataTableColumn<CapabilityRow>> = [
+  {
+    key: "capability",
+    header: "Capability",
+    width: "67%",
+    render: (value, row) => (
+      <Stack gap="$1">
+        <Text css={{ fontFamily: "$nav", fontWeight: "$semibold" }}>{String(value)}</Text>
+        <Text size="sm" css={{ color: "$mutedForeground" }}>{row.contract}</Text>
+      </Stack>
+    ),
+  },
+  {
+    key: "providers",
+    header: "Supported providers",
+    width: "33%",
+    render: (_value, row) => (
+      <Stack gap="$1">
+        <Text size="xs" css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>{row.defaultProvider}</Text>
+        <Text size="xs" css={{ color: "$mutedForeground", fontFamily: "$nav" }}>{row.alternativeProvider}</Text>
+      </Stack>
+    ),
+  },
+];
 
 export function ProvidersSection() {
   return (
@@ -13,35 +57,7 @@ export function ProvidersSection() {
               Choose DNS, backend, deployment, and mail independently. Every provider stays replaceable.
             </Text>
           </Stack>
-          <Surface className="provider-table-shell" tone="raised" radius="lg">
-            <table className="provider-table">
-              <VisuallyHidden as="caption">VSCD capabilities and supported providers</VisuallyHidden>
-              <thead>
-                <tr>
-                  <th scope="col">Capability</th>
-                  <th scope="col">Supported providers</th>
-                </tr>
-              </thead>
-              <tbody>
-                {PROVIDER_CAPABILITIES.map((capability) => (
-                  <tr key={capability.id}>
-                    <td>
-                      <Stack gap="$1">
-                        <Text css={{ fontFamily: "$nav", fontWeight: "$semibold" }}>{capability.label}</Text>
-                        <Text size="sm" css={{ color: "$mutedForeground" }}>{capability.role}</Text>
-                      </Stack>
-                    </td>
-                    <td>
-                      <Stack gap="$1">
-                        <Text size="xs" css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>{capability.defaultProvider}</Text>
-                        <Text size="xs" css={{ color: "$mutedForeground", fontFamily: "$nav" }}>{capability.alternativeProvider}</Text>
-                      </Stack>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Surface>
+          <DataTable caption="VSCD capabilities and supported providers" columns={columns} rows={rows} density="compact" layout="fit" />
         </Grid>
       </Container>
     </Box>

@@ -1,16 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { ThemeProvider, TooltipProvider } from "strawn";
+import { DesignSystemProvider, TooltipProvider } from "@paul/ui-core";
+import "@paul/ui-tokens/styles.css";
 import { App } from "./App";
 import "./styles.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider>
+    <DesignSystemProvider>
       <TooltipProvider>
         <App />
       </TooltipProvider>
-    </ThemeProvider>
+    </DesignSystemProvider>
   </StrictMode>,
 );
 

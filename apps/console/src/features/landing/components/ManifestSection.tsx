@@ -1,11 +1,10 @@
-import { Box, Container, Flex, Grid, Heading, Stack, Text } from "strawn";
-import { ArrowRightIcon, CheckIcon } from "strawn-icons";
+import { Box, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { ArrowRightIcon, CheckIcon } from "@paul/ui-icons";
+import { CodeDemo, MarketingActionLink } from "@paul/ui-patterns/marketing";
 import { MANIFEST_EXAMPLE } from "../constants";
-import { CodeDemo } from "./CodeDemo";
-import { MarketingActionLink } from "./MarketingActionLink";
 
 const guarantees = [
-  "Versioned public design-system packages",
+  "Repository-relative design-system source",
   "Conflict-safe DNS writes",
   "Provider-specific authorization tests",
   "Reviewed, prebuilt production releases",

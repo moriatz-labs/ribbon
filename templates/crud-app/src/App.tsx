@@ -17,8 +17,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger
-} from "strawn";
-import { LogOutIcon, PlusIcon, TrashIcon } from "strawn-icons";
+} from "@paul/ui-core";
+import { LogOutIcon, PlusIcon, TrashIcon } from "@paul/ui-icons";
+import { DatePicker } from "@paul/ui-patterns";
 import { backend } from "./lib/backend";
 import type { BackendSession, RecordItem } from "./lib/backend";
 
@@ -118,13 +119,13 @@ export function App() {
               <Stack gap="$2">
                 <TextStyle textStyle="eyebrow" tone="muted">New record</TextStyle>
                 <TextStyle as="h2" id="new-record-heading" textStyle="headingSm">Capture something useful</TextStyle>
-                <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>Use Strawn components as the default building blocks for every generated product.</Text>
+                <Text size="sm" color="$mutedForeground" css={{ margin: 0 }}>Use Paul&apos;s components as the default building blocks for every generated product.</Text>
               </Stack>
               <form onSubmit={addItem}>
                 <Stack gap="$4">
                   <TextField label="Title" required value={title} onChange={(event) => setTitle(event.currentTarget.value)} />
                   <Textarea label="Details" rows={4} value={body} onChange={(event) => setBody(event.currentTarget.value)} />
-                  <TextField id="review-date" label="Review date" type="date" value={dueDate} onChange={(event) => setDueDate(event.currentTarget.value)} />
+                  <DatePicker id="review-date" label="Review date" value={dueDate} onValueChange={setDueDate} />
                   <Button leftIcon={<PlusIcon width={17} height={17} />} type="submit">Add record</Button>
                 </Stack>
               </form>

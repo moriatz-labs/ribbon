@@ -1,8 +1,9 @@
 import { cp, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { projectManifestSchema, type ProjectManifest } from "@vscd/core";
 
+export const DEFAULT_DESIGN_SYSTEM_COMMIT = "ecd03637e6cb5f2422169d02cae234760ccb887d";
 export const DEFAULT_STACK = {
   dns: "hostinger",
   backend: "supabase",
@@ -47,6 +48,17 @@ async function replaceInFiles(path: string, replacements: Record<string, string>
 function findVscdRoot() {
   const currentFile = fileURLToPath(import.meta.url);
   return resolve(dirname(currentFile), "../../..");
+}
+
+function designSystemSourceForManifest(targetPath: string) {
+  const configuredSource = process.env.DESIGN_SYSTEM_SOURCE;
+  if (!configuredSource) return "../design-system";
+
+  const relativeSource = relative(resolve(targetPath), resolve(configuredSource));
+  if (!relativeSource) return ".";
+
+  const portableSource = relativeSource.split(sep).join("/");
+  return portableSource.startsWith(".") ? portableSource : `./${portableSource}`;
 }
 
 function normalizeOptions(titleOrOptions?: string | ScaffoldOptions, legacyDomain?: string): ScaffoldOptions {
@@ -97,8 +109,17 @@ function providerManifest(
     dns,
     mail,
     designSystem: {
-      repository: "https://github.com/moriatz-labs/strawn",
-      packages: ["strawn", "strawn-icons"]
+      source: "../design-system",
+      repository: "https://github.com/Paul-M-Kallarackal/design-system",
+      commit: DEFAULT_DESIGN_SYSTEM_COMMIT,
+      packages: [
+        "@paul/ui-core",
+        "@paul/ui-icons",
+        "@paul/ui-patterns",
+        "@paul/ui-tokens",
+        "@paul/ui-themes"
+      ],
+      requiredComponents: ["DatePicker"]
     }
   };
 }
@@ -176,11 +197,13 @@ async function writeEnvironmentExample(
       ];
   lines.push(
     `PUBLIC_APP_URL=https://${slug}.${domain}`,
+    `DESIGN_SYSTEM_COMMIT=${DEFAULT_DESIGN_SYSTEM_COMMIT}`,
     "",
     "# GitHub Actions secrets, never browser variables:",
     ...(options.deploymentProvider === "vercel"
       ? ["# VERCEL_TOKEN", "# VERCEL_ORG_ID", "# VERCEL_PROJECT_ID"]
       : ["# NETLIFY_AUTH_TOKEN", "# NETLIFY_SITE_ID"]),
+    "# DESIGN_SYSTEM_DEPLOY_KEY is server-only; never prefix it with VITE_.",
     ...(options.dnsProvider === "hostinger"
       ? ["# HOSTINGER_API_TOKEN", `# HOSTINGER_DOMAIN=${domain}`]
       : ["# CLOUDFLARE_API_TOKEN", "# CLOUDFLARE_ZONE_ID", `# CLOUDFLARE_DOMAIN=${domain}`]),
@@ -223,6 +246,8 @@ export async function scaffoldProject(
     "__BASE_DOMAIN__": domain,
     "__BACKEND_PROVIDER__": backendProvider,
     "__AUTH_DELIVERY__": mailProvider,
+    "__DESIGN_SYSTEM_COMMIT__": DEFAULT_DESIGN_SYSTEM_COMMIT,
+    "__DESIGN_SYSTEM_SOURCE__": designSystemSourceForManifest(targetPath),
     "__CREATED_AT__": new Date().toISOString()
   });
 
@@ -232,6 +257,7 @@ export async function scaffoldProject(
     ...manifestSource,
     providers: providerManifest(slug, domain, selected)
   });
+  manifest.providers.designSystem.source = designSystemSourceForManifest(targetPath);
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   await configureProviderFiles(targetPath, selected);
   if (mailProvider === "backend") {

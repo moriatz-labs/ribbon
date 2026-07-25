@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .vercel/
+.vercel-design-system/
+.vercel-design-system-ssh/
 .env
 .env.local
 coverage/

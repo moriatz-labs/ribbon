@@ -35,20 +35,20 @@ describe("scaffoldProject", () => {
     expect(manifest.providers.deployment.provider).toBe("vercel");
     expect(manifest.projectType).toBe("application");
     expect(manifest.providers.designSystem).toMatchObject({
-      repository: "https://github.com/moriatz-labs/strawn",
-      packages: ["strawn", "strawn-icons"]
+      source: "../design-system",
+      repository: "https://github.com/Paul-M-Kallarackal/design-system",
+      commit: "ecd03637e6cb5f2422169d02cae234760ccb887d",
+      requiredComponents: ["DatePicker"]
     });
     expect(release).toContain("notes-app.moriatz.com");
     expect(release).not.toContain("__APP_DOMAIN__");
     expect(envExample).toContain("HOSTINGER_MAIL_API_TOKEN=");
     expect(backend).toContain('fetch("/api/auth/magic-link"');
-    expect(app).toContain('from "strawn"');
-    expect(app).toContain('from "strawn-icons"');
+    expect(app).toContain('import { DatePicker } from "@paul/ui-patterns"');
     expect(app).not.toContain("lucide-react");
-    expect(main).toContain('import { ThemeProvider, TooltipProvider } from "strawn"');
-    expect(packageJson).not.toContain("prepare:design-system");
-    expect(packageJson).toContain('"strawn": "0.1.0"');
-    expect(vitestConfig).not.toContain(".vercel-design-system");
+    expect(main).toContain('import "@paul/ui-tokens/styles.css"');
+    expect(packageJson).toContain("prepare:design-system");
+    expect(vitestConfig).toContain('".vercel-design-system/**"');
     expect(magicLink).toContain("https://notes-app.moriatz.com");
     expect(magicLink).not.toContain("__APP_TITLE__");
   });

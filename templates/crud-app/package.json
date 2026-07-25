@@ -5,20 +5,19 @@
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
-    "check": "pnpm lint && pnpm test && pnpm build",
+    "build": "pnpm prepare:design-system && tsc --noEmit && vite build",
+    "check": "pnpm prepare:design-system && pnpm lint && pnpm test && pnpm build",
     "dev": "vite",
     "dns": "node scripts/configure-domain.mjs",
     "lint": "tsc --noEmit",
+    "prepare:design-system": "node scripts/prepare-design-system.mjs",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.7",
     "firebase": "12.16.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "strawn": "0.1.0",
-    "strawn-icons": "0.1.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

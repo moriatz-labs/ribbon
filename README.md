@@ -52,7 +52,7 @@ flowchart LR
   C --> BE["Backend adapter"]
   C --> DEP["Deployment adapter"]
   C --> MAIL["Mail adapter"]
-  DS["Strawn npm packages"] -. "versioned dependency" .-> APP["Generated application"]
+  DS["Pinned Paul design system"] -. "build input" .-> APP["Generated application"]
   BE --> APP
   APP --> DEP
   DNS --> DEP
@@ -69,7 +69,7 @@ The manifest is the source of truth. The CLI reads it, resolves one adapter per 
 | Backend | Supabase | Firebase | Authenticated ownership for records and objects |
 | Deployment | Vercel | Netlify | Verified prebuilt artifact released by GitHub Actions |
 | Mail | Hostinger Mail | Backend-managed | Server-only delivery or selected backend auth flow |
-| Design system | Strawn | None | Public `strawn` and `strawn-icons` packages pinned by the lockfile |
+| Design system | Paul design system | None | Repository-relative local source and exact remote commit |
 
 Provider IDs and required environment names are defined in [`packages/core/src/providers/contracts.ts`](packages/core/src/providers/contracts.ts).
 
@@ -91,8 +91,11 @@ Every managed repository contains a manifest version 2 file:
     "deployment": { "provider": "vercel", "cnameTarget": "cname.vercel-dns.com" },
     "mail": { "provider": "hostinger-mail" },
     "designSystem": {
-      "repository": "https://github.com/moriatz-labs/strawn",
-      "packages": ["strawn", "strawn-icons"]
+      "source": "../design-system",
+      "repository": "https://github.com/Paul-M-Kallarackal/design-system",
+      "commit": "<exact-40-character-commit>",
+      "packages": ["@paul/ui-core", "@paul/ui-icons", "@paul/ui-patterns", "@paul/ui-tokens", "@paul/ui-themes"],
+      "requiredComponents": ["DatePicker"]
     }
   }
 }
@@ -103,7 +106,8 @@ Rules:
 - `projectType: "control-plane"` is reserved for this repository.
 - Generated repositories use `projectType: "application"`.
 - Provider choices are independent capability slots.
-- Design-system versions are installed from npm and pinned by the application lockfile.
+- Local filesystem references are repository-relative. `DESIGN_SYSTEM_SOURCE` is the only supported machine-specific override.
+- Remote builds use the commit in `.design-system-version` and clone into the ignored `.vercel-design-system/` directory.
 - Secret values never belong in `vscd.json`, source, documentation, or browser variables.
 
 The complete schema is [`schemas/vscd.schema.json`](schemas/vscd.schema.json).
@@ -138,7 +142,7 @@ Use `pnpm vscd <command> --help` for command options.
 ├── schemas/                    JSON schema for vscd.json
 ├── supabase/                   registry migrations and RLS tests
 ├── docs/                       architecture and provider extension documentation
-├── scripts/                    DNS and deployment utilities
+├── scripts/                    build preparation scripts
 ├── AGENTS.md                   binding agent contract
 └── vscd.json                   this control plane's manifest
 ```
@@ -151,7 +155,20 @@ Detailed design documents:
 
 ## Design-system resolution
 
-The public site and generated applications install `strawn` and `strawn-icons` from npm. Vite and TypeScript resolve their normal package exports; no source clone, alias, commit pin, or private credential is required.
+The public site and generated applications consume public `@paul/*` entrypoints.
+
+Resolution order:
+
+1. `DESIGN_SYSTEM_SOURCE`, when explicitly set.
+2. `providers.designSystem.source` from `vscd.json`.
+3. `.vercel-design-system/`, populated for remote builds.
+
+The repository never ships a developer-machine absolute path. Vite, TypeScript, documentation, and public assets use repository-relative or web-relative paths.
+
+Remote builds require one server-only credential:
+
+- `DESIGN_SYSTEM_GITHUB_TOKEN`, or
+- `DESIGN_SYSTEM_DEPLOY_KEY`.
 
 ## Environment contract
 
@@ -164,8 +181,9 @@ Copy [`.env.example`](.env.example) to an ignored local environment file and pop
 | Cloudflare DNS control plane | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID` |
 | Vercel release | `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
 | Netlify release | `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` |
+| Private design-system build | `DESIGN_SYSTEM_GITHUB_TOKEN` or `DESIGN_SYSTEM_DEPLOY_KEY` |
 
-Admin, DNS, deployment, and mail credentials are server-only. They must never use the `VITE_` prefix.
+Admin, DNS, deployment, mail, and private-repository credentials are server-only. They must never use the `VITE_` prefix.
 
 ## Verification
 

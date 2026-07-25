@@ -47,7 +47,7 @@ VSCD has five manifest-selected capabilities:
 | `backend` | `supabase`, `firebase` |
 | `deployment` | `vercel`, `netlify` |
 | `mail` | `hostinger-mail`, `backend` |
-| `designSystem` | public Strawn npm packages |
+| `designSystem` | pinned Paul design system |
 
 Provider selections are independent. Do not infer one capability from another.
 
@@ -75,29 +75,34 @@ Keep `App.tsx` as a composition root. Put feature UI under `features/<feature>/`
 
 All shipped filesystem references must be repository-relative.
 
+- Read the local design-system path from `providers.designSystem.source` in `vscd.json`.
+- Use `DESIGN_SYSTEM_SOURCE` only as an explicit machine-local override.
 - Never commit a drive-qualified path, home-directory path, `file://` URI, or generated-image cache path.
 - Store public media under the owning app's `public/` directory.
 - Reference public media with web-relative paths such as `/images/vscd-switchboard.webp`.
 - Reference repository documents with relative Markdown links.
+- Remote design-system clones belong only in ignored `.vercel-design-system/`.
 
 ## 6. Design-system contract
 
-Strawn is mandatory for public and generated frontend work.
+Paul's design system is mandatory for public and generated frontend work.
 
 Required:
 
-- Import components, providers, tokens, themes, and styles from `strawn`.
-- Import icons from `strawn-icons`.
-- Import only from the two package roots; neither package has category subpaths.
+- Import primitives from `@paul/ui-core`.
+- Import icons from `@paul/ui-icons`.
+- Import reusable patterns, including every date field, from `@paul/ui-patterns`.
+- Import root tokens from `@paul/ui-tokens/styles.css`.
 - Use semantic tokens instead of component-level palette literals.
 - Preserve accessible names, keyboard behavior, 44px touch targets, focus visibility, responsive content, and reduced motion.
-- Pin exact npm versions in the lockfile and update them through reviewed dependency changes.
+- Pin remote builds to the exact commit in `.design-system-version` and `providers.designSystem.commit`.
 
 Forbidden:
 
-- App-local replacements for available Strawn components.
+- App-local replacements for available design-system components.
 - Tailwind, shadcn/ui, Lucide, direct Radix imports, or inline SVG icons in newly generated UI.
-- Old `@paul/*` packages, private design-system clones, Vite aliases, TypeScript paths, deploy keys, or commit pins.
+- Native application-level `input[type="date"]`.
+- A second date-picker trigger.
 - `transition: all`, scale-from-zero entrances, unbounded animation, or decorative infinite motion.
 
 The authenticated browser console is not currently shipped. New public UI must follow this contract.
@@ -138,6 +143,7 @@ Server-only categories:
 - DNS API tokens;
 - mail tokens and mailbox credentials;
 - Vercel or Netlify deployment tokens;
+- design-system repository tokens and deploy keys.
 
 Only publishable provider configuration may use a `VITE_` prefix. Credential files stay outside the repository or in ignored local environment files.
 
@@ -165,7 +171,7 @@ Use the exact package scripts as the command source of truth.
 | Documentation only | Relative links resolve; commands match `package.json` |
 | Core manifest or provider contract | Core typecheck, tests, workspace gate, schema consistency |
 | CLI behavior | Focused CLI tests, scaffold matrix where relevant, workspace gate |
-| Template | Scaffold a temporary application, install from npm, run its tests/build, run `vscd check` |
+| Template | Scaffold a temporary application, run its tests/build, run `vscd check` |
 | Supabase policy | `supabase test db` |
 | Public UI | Typecheck, production build, browser checks at 375/768/1440/1920, no browser errors or overflow |
 | Release-facing change | All applicable checks plus `pnpm check` and `pnpm codex:check` |

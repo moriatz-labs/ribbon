@@ -1,4 +1,4 @@
-import { Box } from "strawn";
+import { Box } from "@paul/ui-core";
 import { HeroSection } from "../components/HeroSection";
 import { LandingFooter } from "../components/LandingFooter";
 import { LandingHeader } from "../components/LandingHeader";

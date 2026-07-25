@@ -94,14 +94,14 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     enforceApplicationDesignSystem = manifest.projectType !== "control-plane";
     const designSystem = manifest.providers.designSystem;
     const designSystemManifestOk =
-      designSystem.repository === "https://github.com/moriatz-labs/strawn" &&
-      designSystem.packages.join(",") === "strawn,strawn-icons";
+      designSystem.repository === "https://github.com/Paul-M-Kallarackal/design-system" &&
+      designSystem.requiredComponents.includes("DatePicker");
     results.push({
       id: "design-system:manifest",
       ok: designSystemManifestOk,
       detail: designSystemManifestOk
-        ? "Strawn public npm packages are selected"
-        : "design system must use the strawn and strawn-icons public packages"
+        ? `Paul's design system is pinned at ${designSystem.commit.slice(0, 12)}`
+        : "design system repository, commit, packages, and DatePicker requirement must be pinned"
     });
     const dns = manifest.providers.dns;
     if (!dns) {
@@ -187,35 +187,40 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     devDependencies?: Record<string, string>;
   };
   const prepareScriptExists = await exists(join(root, "scripts", "prepare-design-system.mjs"));
-  const packageDependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
-  const publicPackagesConfigured = Boolean(
-    packageDependencies.strawn && packageDependencies["strawn-icons"]
+  const prepareScriptConfigured = Boolean(
+    packageJson.scripts?.["prepare:design-system"] &&
+    packageJson.scripts?.build?.includes("prepare:design-system")
   );
   results.push({
-    id: "design-system:packages",
-    ok: publicPackagesConfigured,
-    detail: publicPackagesConfigured
-      ? "strawn and strawn-icons are installed from npm"
-      : "install both strawn and strawn-icons"
+    id: "design-system:prepare",
+    ok: prepareScriptExists && prepareScriptConfigured,
+    detail: prepareScriptExists && prepareScriptConfigured
+      ? "remote builds prepare the pinned private design system"
+      : "scripts/prepare-design-system.mjs and a build-time prepare:design-system step are required"
   });
 
   const vitestConfigSource = await readFile(join(root, "vitest.config.ts"), "utf8").catch(() => "");
-  const envExample = await readFile(join(root, ".env.example"), "utf8").catch(() => "");
-  const legacyWiringSource = [packageJsonSource, vitestConfigSource, envExample].join("\n");
-  const legacyWiringMarkers = [
-    "prepare:design-system",
-    ".vercel-design-system",
-    "DESIGN_SYSTEM_COMMIT",
-    "DESIGN_SYSTEM_DEPLOY_KEY",
-    "DESIGN_SYSTEM_GITHUB_TOKEN"
-  ];
-  const legacyWiring = legacyWiringMarkers.filter((marker) => legacyWiringSource.includes(marker));
+  const testIsolationOk =
+    vitestConfigSource.includes("configDefaults.exclude") &&
+    vitestConfigSource.includes(".vercel-design-system/**");
   results.push({
-    id: "design-system:legacy-wiring",
-    ok: !prepareScriptExists && legacyWiring.length === 0,
-    detail: !prepareScriptExists && legacyWiring.length === 0
-      ? "no private clone, pin, alias, or credential wiring remains"
-      : `remove legacy design-system wiring: ${legacyWiring.join(", ") || "scripts/prepare-design-system.mjs"}`
+    id: "design-system:test-isolation",
+    ok: testIsolationOk,
+    detail: testIsolationOk
+      ? "application tests exclude the private design-system clone"
+      : "vitest.config.ts must extend configDefaults.exclude with .vercel-design-system/**"
+  });
+
+  const envExample = await readFile(join(root, ".env.example"), "utf8").catch(() => "");
+  const designSystemEnvOk =
+    /^DESIGN_SYSTEM_COMMIT=[0-9a-f]{40}$/m.test(envExample) &&
+    /DESIGN_SYSTEM_DEPLOY_KEY/.test(envExample);
+  results.push({
+    id: "design-system:env",
+    ok: designSystemEnvOk,
+    detail: designSystemEnvOk
+      ? "design-system commit and server-only deploy-key contract are declared"
+      : "declare DESIGN_SYSTEM_COMMIT and the server-only DESIGN_SYSTEM_DEPLOY_KEY contract"
   });
 
   const uiSourceFiles = sourceFiles.filter((file) => {
@@ -224,9 +229,12 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
   });
   const uiSource = (await Promise.all(uiSourceFiles.map((file) => readFile(file, "utf8")))).join("\n");
   const requiredDesignSystemMarkers = [
-    'from "strawn"',
-    'from "strawn-icons"',
-    "ThemeProvider"
+    "@paul/ui-core",
+    "@paul/ui-icons",
+    "@paul/ui-patterns",
+    "@paul/ui-tokens/styles.css",
+    "DesignSystemProvider",
+    "DatePicker"
   ];
   const missingDesignSystemMarkers = requiredDesignSystemMarkers.filter(
     (marker) => !uiSource.includes(marker)
@@ -235,7 +243,7 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     id: "design-system:imports",
     ok: missingDesignSystemMarkers.length === 0,
     detail: missingDesignSystemMarkers.length === 0
-      ? "Strawn components, icons, and ThemeProvider are wired"
+      ? "Paul's primitives, icons, tokens, provider, patterns, and DatePicker are wired"
       : `missing design-system wiring: ${missingDesignSystemMarkers.join(", ")}`
   });
 
@@ -244,18 +252,24 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
     ...packageJson.devDependencies
   });
   const prohibitedDependencies = dependencyNames.filter((dependency) =>
-    /^(?:@paul\/|lucide-react|tailwindcss|@tailwindcss\/|@radix-ui\/|@shadcn\/)/.test(dependency)
+    /^(?:lucide-react|tailwindcss|@tailwindcss\/|@radix-ui\/|@shadcn\/)/.test(dependency)
   );
-  const hasOldPaulImport = /(?:from\s+|import\s*)["']@paul\//.test(uiSource);
-  const prohibitedOk = prohibitedDependencies.length === 0 && !hasOldPaulImport;
+  const nativeDateInputs: string[] = [];
+  for (const file of uiSourceFiles) {
+    if (/<input\b[^>]*\btype\s*=\s*["']date["']/i.test(await readFile(file, "utf8"))) {
+      nativeDateInputs.push(relative(root, file));
+    }
+  }
+  const prohibitedOk = prohibitedDependencies.length === 0 && nativeDateInputs.length === 0;
   results.push({
     id: "design-system:no-bypasses",
     ok: prohibitedOk,
     detail: prohibitedOk
-      ? "no old @paul packages, Tailwind, Lucide, shadcn, or direct Radix bypasses found"
-      : prohibitedDependencies.length
-        ? `prohibited dependencies: ${prohibitedDependencies.join(", ")}`
-        : "old @paul imports remain"
+      ? "no Tailwind, Lucide, shadcn, direct Radix, or native date-input bypasses found"
+      : [
+          prohibitedDependencies.length ? `prohibited dependencies: ${prohibitedDependencies.join(", ")}` : "",
+          nativeDateInputs.length ? `native date inputs: ${nativeDateInputs.join(", ")}` : ""
+        ].filter(Boolean).join("; ")
   });
 
   const workflowSources = await Promise.all(
@@ -264,13 +278,15 @@ export async function runCodexCheck(root: string): Promise<CodexCheckResult[]> {
       .map((file) => readFile(file, "utf8"))
   );
   const workflowSource = workflowSources.join("\n");
-  const workflowDesignSystemOk = !legacyWiringMarkers.some((marker) => workflowSource.includes(marker));
+  const workflowDesignSystemOk =
+    workflowSource.includes("DESIGN_SYSTEM_DEPLOY_KEY") &&
+    workflowSource.includes("DESIGN_SYSTEM_COMMIT");
   results.push({
     id: "design-system:workflow",
     ok: workflowDesignSystemOk,
     detail: workflowDesignSystemOk
-      ? "GitHub Actions installs Strawn through the lockfile without private credentials"
-      : "remove private design-system credentials and clone preparation from GitHub Actions"
+      ? "GitHub Actions supplies the private design-system credential and commit"
+      : "GitHub Actions must pass DESIGN_SYSTEM_DEPLOY_KEY and DESIGN_SYSTEM_COMMIT to builds"
   });
   } else {
     results.push({

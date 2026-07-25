@@ -24,7 +24,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Verify application and provider contracts
-        run: pnpm lint && pnpm test
+        run: pnpm prepare:design-system && pnpm lint && pnpm test
+        env:
+          DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
       - name: Pull Vercel settings
         run: pnpm dlx vercel@56.3.1 pull --yes --environment=production
         env:
@@ -34,6 +37,8 @@ jobs:
       - name: Build once
         run: pnpm dlx vercel@56.3.1 build --prod
         env:
+          DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
+          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

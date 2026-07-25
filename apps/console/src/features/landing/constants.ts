@@ -59,10 +59,6 @@ export const MANIFEST_EXAMPLE = `{
     "dns": { "provider": "hostinger" },
     "backend": { "provider": "supabase" },
     "deployment": { "provider": "vercel" },
-    "mail": { "provider": "hostinger-mail" },
-    "designSystem": {
-      "repository": "https://github.com/moriatz-labs/strawn",
-      "packages": ["strawn", "strawn-icons"]
-    }
+    "mail": { "provider": "hostinger-mail" }
   }
 }`;

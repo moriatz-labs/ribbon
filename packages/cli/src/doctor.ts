@@ -92,6 +92,22 @@ export async function runDoctor(profile: DoctorProfile = {
         ? "mail API token, mailbox, and sender present"
         : "optional; backend-managed auth email remains available",
       required: false
+    },
+    {
+      name: "Paul design-system commit",
+      ok: /^[0-9a-f]{40}$/.test(process.env.DESIGN_SYSTEM_COMMIT ?? ""),
+      detail: /^[0-9a-f]{40}$/.test(process.env.DESIGN_SYSTEM_COMMIT ?? "")
+        ? `pinned at ${process.env.DESIGN_SYSTEM_COMMIT!.slice(0, 12)}`
+        : "missing; remote builds must use an exact 40-character commit",
+      required: false
+    },
+    {
+      name: "Paul design-system deploy key",
+      ok: Boolean(process.env.DESIGN_SYSTEM_DEPLOY_KEY),
+      detail: process.env.DESIGN_SYSTEM_DEPLOY_KEY
+        ? "present as a server-only credential"
+        : "missing; remote private design-system builds stay disabled",
+      required: false
     }
   );
 

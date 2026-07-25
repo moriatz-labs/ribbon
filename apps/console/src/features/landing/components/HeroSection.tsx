@@ -1,6 +1,6 @@
-import { Box, Card, CardContent, CardMedia, Container, Flex, Grid, Heading, Stack, Text } from "strawn";
-import { ArrowRightIcon, GitHubIcon } from "strawn-icons";
-import { MarketingActionLink } from "./MarketingActionLink";
+import { Box, Card, CardContent, CardMedia, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
+import { ArrowRightIcon, GitHubIcon } from "@paul/ui-icons";
+import { MarketingActionLink } from "@paul/ui-patterns/marketing";
 
 export function HeroSection() {
   return (

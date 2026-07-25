@@ -1,5 +1,5 @@
-import { Box, Container, Flex, Text } from "strawn";
-import { MarketingActionLink } from "./MarketingActionLink";
+import { Box, Container, Flex, Text } from "@paul/ui-core";
+import { MarketingActionLink } from "@paul/ui-patterns/marketing";
 
 export function LandingFooter() {
   return (

@@ -114,18 +114,31 @@
         },
         "designSystem": {
           "type": "object",
-          "required": ["repository", "packages"],
-          "additionalProperties": false,
+          "required": ["source", "repository", "commit", "packages", "requiredComponents"],
           "properties": {
-            "repository": { "const": "https://github.com/moriatz-labs/strawn" },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?![\\\\/]{1,2}).+"
+            },
+            "repository": { "type": "string", "format": "uri" },
+            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
             "packages": {
               "type": "array",
               "prefixItems": [
-                { "const": "strawn" },
-                { "const": "strawn-icons" }
+                { "const": "@paul/ui-core" },
+                { "const": "@paul/ui-icons" },
+                { "const": "@paul/ui-patterns" },
+                { "const": "@paul/ui-tokens" },
+                { "const": "@paul/ui-themes" }
               ],
-              "minItems": 2,
-              "maxItems": 2
+              "minItems": 5,
+              "maxItems": 5
+            },
+            "requiredComponents": {
+              "type": "array",
+              "contains": { "const": "DatePicker" },
+              "minContains": 1
             }
           }
         }
