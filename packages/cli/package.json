@@ -1,10 +1,10 @@
 {
-  "name": "@vscd/cli",
+  "name": "@moriatz/ribbon-cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "vscd": "./dist/cli.js"
+    "ribbon": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -14,7 +14,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@vscd/core": "workspace:*"
+    "@moriatz/ribbon-core": "workspace:*"
   }
 }
 

@@ -100,7 +100,7 @@ export class CloudflareClient {
       content: target,
       ttl,
       proxied: false,
-      comment: "Managed by VSCD"
+      comment: "Managed by Ribbon"
     });
     const record = existing
       ? await this.request<CloudflareDnsRecord>(

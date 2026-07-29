@@ -36,19 +36,19 @@ export const WORKFLOW_STEPS: readonly WorkflowStep[] = [
     number: "Step 1",
     title: "Describe the stack",
     description: "Choose a provider for each capability in one versioned manifest.",
-    command: "pnpm vscd providers",
+    command: "pnpm ribbon providers",
   },
   {
     number: "Step 2",
     title: "Generate the product boundary",
     description: "Scaffold only the selected adapters, policy tests, and release workflow.",
-    command: "pnpm vscd init my-app",
+    command: "pnpm ribbon init my-app",
   },
   {
     number: "Step 3",
     title: "Prove it can ship",
     description: "Run provider-aware checks before a reviewed production release.",
-    command: "pnpm vscd check ../my-app",
+    command: "pnpm ribbon check ../my-app",
   },
 ];
 
@@ -59,6 +59,11 @@ export const MANIFEST_EXAMPLE = `{
     "dns": { "provider": "hostinger" },
     "backend": { "provider": "supabase" },
     "deployment": { "provider": "vercel" },
-    "mail": { "provider": "hostinger-mail" }
+    "mail": { "provider": "hostinger-mail" },
+    "designSystem": {
+      "provider": "strawn",
+      "source": "npm",
+      "version": "0.1.0"
+    }
   }
 }`;

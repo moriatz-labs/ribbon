@@ -1,19 +1,19 @@
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { projectManifestSchema } from "@vscd/core";
+import { projectManifestSchema } from "@moriatz/ribbon-core";
 import { describe, expect, it } from "vitest";
 import { scaffoldProject } from "../src/scaffold.js";
 
 describe("scaffoldProject", () => {
   it("configures the default Hostinger subdomain", async () => {
-    const parent = await mkdtemp(join(tmpdir(), "vscd-scaffold-"));
+    const parent = await mkdtemp(join(tmpdir(), "ribbon-scaffold-"));
     const target = join(parent, "notes-app");
 
     await scaffoldProject("notes-app", target, undefined, "moriatz.com");
 
     const manifest = projectManifestSchema.parse(
-      JSON.parse(await readFile(join(target, "vscd.json"), "utf8"))
+      JSON.parse(await readFile(join(target, "ribbon.json"), "utf8"))
     );
     const release = await readFile(join(target, ".github", "workflows", "release.yml"), "utf8");
     const envExample = await readFile(join(target, ".env.example"), "utf8");
@@ -21,7 +21,6 @@ describe("scaffoldProject", () => {
     const backend = await readFile(join(target, "src", "lib", "providers", "supabase.ts"), "utf8");
     const main = await readFile(join(target, "src", "main.tsx"), "utf8");
     const packageJson = await readFile(join(target, "package.json"), "utf8");
-    const vitestConfig = await readFile(join(target, "vitest.config.ts"), "utf8");
     const magicLink = await readFile(join(target, "api", "auth", "magic-link.ts"), "utf8");
 
     expect(manifest.providers.dns).toMatchObject({
@@ -35,26 +34,27 @@ describe("scaffoldProject", () => {
     expect(manifest.providers.deployment.provider).toBe("vercel");
     expect(manifest.projectType).toBe("application");
     expect(manifest.providers.designSystem).toMatchObject({
-      source: "../design-system",
-      repository: "https://github.com/Paul-M-Kallarackal/design-system",
-      commit: "ecd03637e6cb5f2422169d02cae234760ccb887d",
-      requiredComponents: ["DatePicker"]
+      provider: "strawn",
+      source: "npm",
+      version: "0.1.0",
+      requiredComponents: ["ThemeProvider", "TooltipProvider"]
     });
     expect(release).toContain("notes-app.moriatz.com");
     expect(release).not.toContain("__APP_DOMAIN__");
     expect(envExample).toContain("HOSTINGER_MAIL_API_TOKEN=");
     expect(backend).toContain('fetch("/api/auth/magic-link"');
-    expect(app).toContain('import { DatePicker } from "@paul/ui-patterns"');
+    expect(app).toContain('from "strawn"');
+    expect(app).toContain('from "strawn-icons"');
     expect(app).not.toContain("lucide-react");
-    expect(main).toContain('import "@paul/ui-tokens/styles.css"');
-    expect(packageJson).toContain("prepare:design-system");
-    expect(vitestConfig).toContain('".vercel-design-system/**"');
+    expect(main).toContain("ThemeProvider");
+    expect(packageJson).toContain('"strawn": "0.1.0"');
+    expect(packageJson).toContain('"strawn-icons": "0.1.0"');
     expect(magicLink).toContain("https://notes-app.moriatz.com");
     expect(magicLink).not.toContain("__APP_TITLE__");
   });
 
   it("scaffolds every built-in DNS, backend, and deployment combination", async () => {
-    const parent = await mkdtemp(join(tmpdir(), "vscd-matrix-"));
+    const parent = await mkdtemp(join(tmpdir(), "ribbon-matrix-"));
     const dnsProviders = ["hostinger", "cloudflare"] as const;
     const backendProviders = ["supabase", "firebase"] as const;
     const deploymentProviders = ["vercel", "netlify"] as const;
@@ -71,7 +71,7 @@ describe("scaffoldProject", () => {
             deploymentProvider
           });
           const manifest = projectManifestSchema.parse(
-            JSON.parse(await readFile(join(target, "vscd.json"), "utf8"))
+            JSON.parse(await readFile(join(target, "ribbon.json"), "utf8"))
           );
           const release = await readFile(join(target, ".github", "workflows", "release.yml"), "utf8");
           const packageJson = JSON.parse(await readFile(join(target, "package.json"), "utf8")) as {

@@ -1,10 +1,10 @@
-# VSCD Architecture
+# Ribbon Architecture
 
 ## Decision
 
-VSCD manages each product as a separate repository and provider unit. The manifest selects adapters by capability: DNS, deployment, backend, and mail. Hostinger + Supabase + Vercel remains the basic profile, while Cloudflare + Firebase + Netlify is an equally valid built-in profile. The choices can be mixed independently.
+Ribbon manages each product as a separate repository and provider unit. The manifest selects adapters by capability: DNS, deployment, backend, and mail. Hostinger + Supabase + Vercel remains the basic profile, while Cloudflare + Firebase + Netlify is an equally valid built-in profile. The choices can be mixed independently.
 
-Local builds resolve Paul's design system from the repository-relative manifest source or `DESIGN_SYSTEM_SOURCE`. Remote builds clone the pinned commit into `.vercel-design-system`.
+Local and remote builds resolve Strawn from the exact npm package versions in `package.json` and the pnpm lockfile.
 
 ## System Map
 
@@ -17,8 +17,8 @@ flowchart LR
     BE --> AUTH["Identity + authorization"]
     BE --> DATA["Records + object storage"]
 
-    DS["Paul design system"] -. "pinned build input" .-> APP
-    CDX["Codex + vscd-build"] --> CLI["VSCD CLI"]
+    DS["Strawn npm packages"] -. "pinned build input" .-> APP
+    CDX["Codex + ribbon-build"] --> CLI["Ribbon CLI"]
     CLI --> CATALOG["Provider catalog + contracts"]
     CATALOG --> DNS
     CATALOG --> DEP
@@ -34,7 +34,7 @@ flowchart LR
 | Deployment provider | Static app and optional serverless endpoints | Vercel or Netlify credentials in GitHub Actions |
 | DNS provider | Authoritative CNAME | Hostinger or Cloudflare token in the control plane |
 | GitHub Actions | Verified production build and selected deployment workflow | Selected adapter secrets and design-system deploy key |
-| Codex/VSCD | Scaffold, check, inventory, registration, URL handoff | Local authenticated CLI sessions; no logged secret values |
+| Codex/Ribbon | Scaffold, check, inventory, registration, URL handoff | Local authenticated CLI sessions; no logged secret values |
 
 ## Build Sequence
 
@@ -42,32 +42,32 @@ flowchart LR
 sequenceDiagram
     actor User
     participant Codex
-    participant VSCD as VSCD CLI
+    participant Ribbon as Ribbon CLI
     participant DNS as DNS adapter
     participant Backend as Backend adapter
     participant GitHub
     participant Deploy as Deployment adapter
 
     User->>Codex: Build me X with selected providers
-    Codex->>VSCD: doctor --provider profile
-    VSCD-->>Codex: selected adapter readiness
-    Codex->>VSCD: init x --dns-provider ... --backend-provider ... --deployment-provider ...
-    VSCD->>DNS: conflict-safe CNAME upsert
-    VSCD-->>Codex: app + selected provider files + workflow
-    Codex->>VSCD: check x
-    VSCD-->>Codex: provider-specific policy and release gates
+    Codex->>Ribbon: doctor --provider profile
+    Ribbon-->>Codex: selected adapter readiness
+    Codex->>Ribbon: init x --dns-provider ... --backend-provider ... --deployment-provider ...
+    Ribbon->>DNS: conflict-safe CNAME upsert
+    Ribbon-->>Codex: app + selected provider files + workflow
+    Codex->>Ribbon: check x
+    Ribbon-->>Codex: provider-specific policy and release gates
     Codex->>GitHub: feature branch + pull request
     GitHub->>Backend: run provider policy tests
     GitHub->>Deploy: deploy verified artifact and assign hostname
     Deploy-->>GitHub: deployment URL
-    GitHub-->>VSCD: deployment artifact
-    VSCD-->>User: verified project URLs
+    GitHub-->>Ribbon: deployment artifact
+    Ribbon-->>User: verified project URLs
 ```
 
 ## Repository Boundaries
 
 ```text
-VSCD repository
+Ribbon repository
   apps/console        public product site and server-side web functions
   packages/core       manifest normalization, catalog, contracts, API clients
   packages/cli        doctor, inventory, scaffold, DNS, checks, registry
@@ -80,7 +80,7 @@ Generated project
   supabase/ or *.rules selected backend authorization artifacts
   scripts/             manifest-driven DNS and build preparation
   .github/workflows/   selected deployment adapter
-  vscd.json            capability selections, safe metadata, URLs
+  ribbon.json            capability selections, safe metadata, URLs
 ```
 
 ## Security Invariants
@@ -89,7 +89,7 @@ Generated project
 - Supabase tables in exposed schemas enable RLS, grant Data API access explicitly, and ship SQL policy tests.
 - Firebase documents and objects require matching authenticated ownership in committed rules.
 - Browser variables may contain publishable provider configuration, never service-role/admin, DNS, mail, deployment, or deploy-key secrets.
-- Production deployment runs only through the generated provider workflow after local and VSCD checks.
+- Production deployment runs only through the generated provider workflow after local and Ribbon checks.
 
 See [Provider architecture](provider-architecture.md) for the extension protocol.
 

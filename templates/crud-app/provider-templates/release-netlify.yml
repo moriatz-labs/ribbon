@@ -24,15 +24,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Verify application and provider contracts
-        run: pnpm prepare:design-system && pnpm lint && pnpm test
-        env:
-          DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
+        run: pnpm lint && pnpm test
       - name: Build once
         run: pnpm build
         env:
-          DESIGN_SYSTEM_COMMIT: __DESIGN_SYSTEM_COMMIT__
-          DESIGN_SYSTEM_DEPLOY_KEY: ${{ secrets.DESIGN_SYSTEM_DEPLOY_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}

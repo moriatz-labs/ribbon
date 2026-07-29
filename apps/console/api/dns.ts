@@ -6,7 +6,7 @@ import {
   CloudflareDnsAdapter,
   HostingerClient,
   HostingerDnsAdapter
-} from "@vscd/core";
+} from "@moriatz/ribbon-core";
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   if (request.method !== "POST") {
@@ -19,7 +19,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
   const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!token || !supabaseUrl || !publishableKey) {
-    response.status(401).json({ error: "A valid VSCD session is required" });
+    response.status(401).json({ error: "A valid Ribbon session is required" });
     return;
   }
   const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
@@ -29,11 +29,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
   });
   if (!authResponse.ok) {
-    response.status(401).json({ error: "The VSCD session is invalid or expired" });
+    response.status(401).json({ error: "The Ribbon session is invalid or expired" });
     return;
   }
 
-  const { hostname, target = "cname.vercel-dns.com", provider = process.env.VSCD_DNS_PROVIDER ?? "hostinger", ttl = 300 } = request.body as {
+  const { hostname, target = "cname.vercel-dns.com", provider = process.env.RIBBON_DNS_PROVIDER ?? "hostinger", ttl = 300 } = request.body as {
     hostname?: string;
     target?: string;
     provider?: "hostinger" | "cloudflare";

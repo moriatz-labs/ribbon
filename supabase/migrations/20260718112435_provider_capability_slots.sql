@@ -1,8 +1,8 @@
-alter table public.vscd_projects
+alter table public.ribbon_projects
 alter column providers set default
   '{"deployment":{"provider":"vercel"},"backend":{"provider":"supabase"},"designSystem":true}'::jsonb;
 
-update public.vscd_projects
+update public.ribbon_projects
 set providers =
   jsonb_build_object(
     'deployment',

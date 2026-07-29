@@ -2,7 +2,7 @@
 
 ## Default Is A Profile, Not An Assumption
 
-VSCD's basic profile is Hostinger DNS, Supabase, Vercel, and Hostinger Mail. The implementation does not infer those providers from filenames. A version 2 manifest selects one adapter for each capability:
+Ribbon's basic profile is Hostinger DNS, Supabase, Vercel, and Hostinger Mail. The implementation does not infer those providers from filenames. A version 2 manifest selects one adapter for each capability:
 
 ```json
 {
@@ -45,7 +45,7 @@ Provider metadata is safe to commit. Tokens, private keys, service-role credenti
 
 The generated React UI imports `src/lib/backend.ts`. That module selects a provider adapter, so product components do not know whether data comes from Supabase or Firebase.
 
-DNS is manifest-driven in both the VSCD CLI and generated `scripts/configure-domain.mjs`. The CNAME target comes from the selected deployment adapter rather than assuming Vercel. Cloudflare is always configured with `proxied: false` for these direct hosting-provider routes.
+DNS is manifest-driven in both the Ribbon CLI and generated `scripts/configure-domain.mjs`. The CNAME target comes from the selected deployment adapter rather than assuming Vercel. Cloudflare is always configured with `proxied: false` for these direct hosting-provider routes.
 
 Deployment workflows are adapter templates. Scaffolding copies only `release-vercel.yml` or `release-netlify.yml` into the generated repository and removes the unused provider files.
 
@@ -74,7 +74,7 @@ Adding a provider is deliberately bounded:
 2. Add its discriminated manifest configuration and JSON Schema branch.
 3. Implement the capability contract. DNS providers implement `DnsProviderAdapter`; backend providers implement the generated `BackendAdapter`; deployment providers supply a release template.
 4. Teach the scaffold to keep the provider's files and remove unused alternatives.
-5. Add provider-specific `doctor`, inventory, and `vscd check` evidence.
+5. Add provider-specific `doctor`, inventory, and `ribbon check` evidence.
 6. Add the provider to the full scaffold matrix and build a generated reference project.
 7. Document credential scope, conflict behavior, rollback, and production evidence.
 

@@ -1,14 +1,14 @@
-# VSCD Technical Design
+# Ribbon Technical Design
 
 ## Goals
 
-VSCD turns a product request into a repeatable lifecycle: select a provider profile, scaffold, implement, check, release, register, and return URLs. Products remain independent repositories and do not share provider failure domains.
+Ribbon turns a product request into a repeatable lifecycle: select a provider profile, scaffold, implement, check, release, register, and return URLs. Products remain independent repositories and do not share provider failure domains.
 
 The basic profile is Hostinger DNS + Supabase + Vercel. It is a default, not a hard-coded architecture.
 
 ## Capability Model
 
-`vscd.json` version 2 has four operational slots:
+`ribbon.json` version 2 has four operational slots:
 
 - `providers.dns`: `hostinger` or `cloudflare`;
 - `providers.backend`: `supabase` or `firebase`;
@@ -65,14 +65,14 @@ Both workflows use frozen lockfile installs, cancel superseded runs, keep creden
 
 ## Release Gate
 
-`vscd check` fails when the manifest, one lockfile, environment contract, design-system pin, or selected release workflow is missing. It also fails on:
+`ribbon check` fails when the manifest, one lockfile, environment contract, exact Strawn npm dependencies, or selected release workflow is missing. It also fails on:
 
 - an incomplete DNS configuration or proxied Cloudflare route;
 - a browser-prefixed admin, DNS, mail, or deployment secret;
 - missing Supabase RLS or SQL tests;
 - missing owner-scoped Firebase rules or `firebase.json`;
 - a workflow that does not match the selected deployment provider;
-- a design-system bypass or native date input.
+- a design-system bypass or missing Strawn provider wiring.
 
 Product lint, tests, typecheck, build, and provider policy tests remain separate required evidence.
 

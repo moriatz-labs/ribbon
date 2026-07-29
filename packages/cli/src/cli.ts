@@ -11,12 +11,11 @@ import {
   upsertProject,
   type ProviderCapability,
   type ProjectManifest
-} from "@vscd/core";
+} from "@moriatz/ribbon-core";
 import { runCodexCheck } from "./check.js";
 import {
-  loadVscdCredentials,
+  loadRibbonCredentials,
   saveCloudflareCredentials,
-  saveDesignSystemCredentials,
   saveHostingerCredentials
 } from "./credentials.js";
 import { provisionDnsCname } from "./dns.js";
@@ -24,18 +23,18 @@ import { runDoctor } from "./doctor.js";
 import { collectInventory } from "./inventory.js";
 import { DEFAULT_STACK, scaffoldProject } from "./scaffold.js";
 
-const registryPath = process.env.VSCD_REGISTRY_PATH ?? join(homedir(), ".vscd", "registry.json");
-const credentialsPath = loadVscdCredentials();
+const registryPath = process.env.RIBBON_REGISTRY_PATH ?? join(homedir(), ".ribbon", "registry.json");
+const credentialsPath = loadRibbonCredentials();
 
 function printHelp() {
-  console.log(`VSCD
+  console.log(`Ribbon
 
 Default stack: Hostinger DNS + Supabase + Vercel
 
 Commands:
   providers [--json]
   doctor [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>]
-  auth <hostinger|cloudflare|design-system>
+  auth <hostinger|cloudflare>
   inventory [--json]
   init <slug> [--title <name>] [--target <path>] [--domain <domain>] [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>] [--no-domain]
   dns [project-path] [--target <hostname>]
@@ -59,7 +58,7 @@ async function readProjectManifest(path = "."): Promise<ProjectManifest> {
   const absolute = isAbsolute(path) ? path : resolve(path);
   const manifestPath = extname(absolute).toLowerCase() === ".json"
     ? absolute
-    : join(absolute, "vscd.json");
+    : join(absolute, "ribbon.json");
   return projectManifestSchema.parse(JSON.parse(await readFile(manifestPath, "utf8")));
 }
 
@@ -122,7 +121,7 @@ async function main() {
   }
 
   if (command === "init") {
-    if (!firstArgument) throw new Error("Usage: vscd init <slug> [provider options]");
+    if (!firstArgument) throw new Error("Usage: ribbon init <slug> [provider options]");
     const target = values.target
       ? (isAbsolute(values.target) ? values.target : resolve(values.target))
       : resolve(firstArgument);
@@ -153,16 +152,6 @@ async function main() {
   }
 
   if (command === "auth") {
-    if (firstArgument === "design-system") {
-      const deployKey = process.env.DESIGN_SYSTEM_DEPLOY_KEY;
-      const commit = process.env.DESIGN_SYSTEM_COMMIT;
-      if (!deployKey || !commit) {
-        throw new Error("DESIGN_SYSTEM_DEPLOY_KEY and DESIGN_SYSTEM_COMMIT must be present to import credentials.");
-      }
-      await saveDesignSystemCredentials({ deployKey, commit, path: credentialsPath });
-      console.log(`Stored Paul design-system credentials in ${credentialsPath}`);
-      return;
-    }
     if (firstArgument === "cloudflare") {
       const token = process.env.CLOUDFLARE_API_TOKEN;
       const zoneId = process.env.CLOUDFLARE_ZONE_ID;
@@ -175,7 +164,7 @@ async function main() {
       return;
     }
     if (firstArgument !== "hostinger") {
-      throw new Error("Usage: vscd auth <hostinger|cloudflare|design-system>");
+      throw new Error("Usage: ribbon auth <hostinger|cloudflare>");
     }
     const token = process.env.HOSTINGER_API_TOKEN;
     const domain = values.domain ?? process.env.HOSTINGER_DOMAIN;
@@ -214,7 +203,7 @@ async function main() {
   }
 
   if (command === "register") {
-    if (!firstArgument) throw new Error("Usage: vscd register <manifest-path>");
+    if (!firstArgument) throw new Error("Usage: ribbon register <manifest-path>");
     const manifest = projectManifestSchema.parse(JSON.parse(await readFile(resolve(firstArgument), "utf8")));
     await upsertProject(registryPath, manifest);
     console.log(`Registered ${manifest.slug} in ${registryPath}`);

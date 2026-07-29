@@ -1,18 +1,18 @@
 ---
-project: VSCD
+project: Ribbon
 scope: repository
-manifest: vscd.json
+manifest: ribbon.json
 manifest_version: 2
 package_manager: pnpm@11.7.0
 node: 24
 production_release: github-actions-main
 ---
 
-# VSCD Agent Contract
+# Ribbon Agent Contract
 
 ## 1. Authority
 
-This file is the binding repository contract for agents working in VSCD.
+This file is the binding repository contract for agents working in Ribbon.
 
 Precedence, highest first:
 
@@ -28,18 +28,18 @@ Never weaken an executable check to make a change pass. Fix the implementation o
 Before editing:
 
 1. Read `AGENTS.md` completely.
-2. Read `vscd.json`.
+2. Read `ribbon.json`.
 3. Read the relevant package or app `package.json`.
 4. Inspect `git status --short` and preserve unrelated work.
 5. Read the nearest implementation, tests, and referenced architecture document.
 6. For UI work, read the design-system contract selected by `providers.designSystem`.
-7. For provisioning or release work, run `pnpm vscd doctor` before mutation.
+7. For provisioning or release work, run `pnpm ribbon doctor` before mutation.
 
 Do not scan credentials or print secret values during discovery.
 
 ## 3. Product model
 
-VSCD has five manifest-selected capabilities:
+Ribbon has five manifest-selected capabilities:
 
 | Capability | Built-in provider IDs |
 |---|---|
@@ -47,7 +47,7 @@ VSCD has five manifest-selected capabilities:
 | `backend` | `supabase`, `firebase` |
 | `deployment` | `vercel`, `netlify` |
 | `mail` | `hostinger-mail`, `backend` |
-| `designSystem` | pinned Paul design system |
+| `designSystem` | pinned Strawn design system |
 
 Provider selections are independent. Do not infer one capability from another.
 
@@ -65,7 +65,7 @@ Only the repository-root manifest may use `projectType: "control-plane"`. Genera
 | `packages/core/` | Manifest types, validation, normalization, registry, provider contracts |
 | `packages/cli/` | Commands, orchestration, local credential loading, checks |
 | `templates/crud-app/` | Generated application source and provider-specific templates |
-| `schemas/vscd.schema.json` | Machine-readable manifest schema |
+| `schemas/ribbon.schema.json` | Machine-readable manifest schema |
 | `supabase/` | Control-plane registry schema and RLS tests |
 | `docs/` | Architecture and extension contracts |
 
@@ -75,34 +75,30 @@ Keep `App.tsx` as a composition root. Put feature UI under `features/<feature>/`
 
 All shipped filesystem references must be repository-relative.
 
-- Read the local design-system path from `providers.designSystem.source` in `vscd.json`.
-- Use `DESIGN_SYSTEM_SOURCE` only as an explicit machine-local override.
+- Resolve Strawn from the npm registry using the exact versions in `ribbon.json` and package manifests.
+- Keep `pnpm-lock.yaml` as the resolved package-artifact source of truth.
 - Never commit a drive-qualified path, home-directory path, `file://` URI, or generated-image cache path.
 - Store public media under the owning app's `public/` directory.
-- Reference public media with web-relative paths such as `/images/vscd-switchboard.webp`.
+- Reference public media with web-relative paths such as `/images/ribbon-switchboard.webp`.
 - Reference repository documents with relative Markdown links.
-- Remote design-system clones belong only in ignored `.vercel-design-system/`.
 
-## 6. Design-system contract
+## 6. Strawn contract
 
-Paul's design system is mandatory for public and generated frontend work.
+Strawn is mandatory for public and generated frontend work.
 
 Required:
 
-- Import primitives from `@paul/ui-core`.
-- Import icons from `@paul/ui-icons`.
-- Import reusable patterns, including every date field, from `@paul/ui-patterns`.
-- Import root tokens from `@paul/ui-tokens/styles.css`.
+- Import generic primitives and providers from the public `strawn` root.
+- Import icons from the public `strawn-icons` root.
+- Keep product-specific marketing, data, and application composition in the consuming app.
 - Use semantic tokens instead of component-level palette literals.
 - Preserve accessible names, keyboard behavior, 44px touch targets, focus visibility, responsive content, and reduced motion.
-- Pin remote builds to the exact commit in `.design-system-version` and `providers.designSystem.commit`.
+- Pin `strawn` and `strawn-icons` to the exact manifest version in every consuming package.
 
 Forbidden:
 
-- App-local replacements for available design-system components.
+- App-local replacements for components already exported by Strawn.
 - Tailwind, shadcn/ui, Lucide, direct Radix imports, or inline SVG icons in newly generated UI.
-- Native application-level `input[type="date"]`.
-- A second date-picker trigger.
 - `transition: all`, scale-from-zero entrances, unbounded animation, or decorative infinite motion.
 
 The authenticated browser console is not currently shipped. New public UI must follow this contract.
@@ -151,13 +147,13 @@ Only publishable provider configuration may use a `VITE_` prefix. Credential fil
 
 | Intent | Command |
 |---|---|
-| List provider contracts | `pnpm vscd providers` |
-| Inspect readiness | `pnpm vscd doctor` |
-| Scaffold | `pnpm vscd init <slug> --target <path>` |
-| Provision DNS | `pnpm vscd dns <project-path>` |
-| Validate a managed project | `pnpm vscd check <project-path>` |
+| List provider contracts | `pnpm ribbon providers` |
+| Inspect readiness | `pnpm ribbon doctor` |
+| Scaffold | `pnpm ribbon init <slug> --target <path>` |
+| Provision DNS | `pnpm ribbon dns <project-path>` |
+| Validate a managed project | `pnpm ribbon check <project-path>` |
 | Run public site locally | `pnpm dev:console` |
-| Public-site typecheck | `pnpm --filter @vscd/console typecheck` |
+| Public-site typecheck | `pnpm --filter @moriatz/ribbon-console typecheck` |
 | Workspace gate | `pnpm check` |
 | Control-plane gate | `pnpm codex:check` |
 | Supabase policy tests | `supabase test db` |
@@ -171,7 +167,7 @@ Use the exact package scripts as the command source of truth.
 | Documentation only | Relative links resolve; commands match `package.json` |
 | Core manifest or provider contract | Core typecheck, tests, workspace gate, schema consistency |
 | CLI behavior | Focused CLI tests, scaffold matrix where relevant, workspace gate |
-| Template | Scaffold a temporary application, run its tests/build, run `vscd check` |
+| Template | Scaffold a temporary application, run its tests/build, run `ribbon check` |
 | Supabase policy | `supabase test db` |
 | Public UI | Typecheck, production build, browser checks at 375/768/1440/1920, no browser errors or overflow |
 | Release-facing change | All applicable checks plus `pnpm check` and `pnpm codex:check` |

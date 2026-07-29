@@ -1,10 +1,10 @@
-import { Box, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
-import { ArrowRightIcon, CheckIcon } from "@paul/ui-icons";
-import { CodeDemo, MarketingActionLink } from "@paul/ui-patterns/marketing";
+import { Box, Container, Flex, Grid, Heading, Stack, Text } from "strawn";
+import { ArrowRightIcon, CheckIcon } from "strawn-icons";
+import { ActionLink } from "./ActionLink";
 import { MANIFEST_EXAMPLE } from "../constants";
 
 const guarantees = [
-  "Repository-relative design-system source",
+  "Exact Strawn packages from npm",
   "Conflict-safe DNS writes",
   "Provider-specific authorization tests",
   "Reviewed, prebuilt production releases",
@@ -15,19 +15,22 @@ export function ManifestSection() {
     <Box as="section" id="manifest" css={{ borderTop: "$subtle solid $border", background: "$muted", paddingBlock: "$16" }}>
       <Container>
         <Grid columns={{ initial: "1fr", lg: "minmax(0, 1fr) minmax(22rem, .8fr)" }} gap="$10" css={{ alignItems: "center" }}>
-        <CodeDemo
-          title="Repository contract"
-          snippets={[
-            { id: "manifest", label: "vscd.json", language: "JSON", code: MANIFEST_EXAMPLE },
-            { id: "verify", label: "Verify", language: "Shell", code: "pnpm vscd check ../my-app" },
-          ]}
-        />
+        <Box className="code-panel">
+          <Flex className="code-panel__header" alignItems="center" justifyContent="space-between" gap="$4">
+            <Text css={{ fontFamily: "$ui", fontWeight: "$semibold" }}>Repository contract</Text>
+            <Text size="xs" css={{ color: "$mutedForeground", fontFamily: "$mono" }}>ribbon.json</Text>
+          </Flex>
+          <pre><code>{MANIFEST_EXAMPLE}</code></pre>
+          <Box className="code-panel__command">
+            <Text size="xs" css={{ color: "$mutedForeground", fontFamily: "$mono" }}>pnpm ribbon check ../my-app</Text>
+          </Box>
+        </Box>
         <Stack gap="$6">
           <Stack gap="$3" css={{ maxWidth: "$reading" }}>
-            <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Machine-readable contract</Text>
+            <Text css={{ color: "$primary", fontFamily: "$ui", fontWeight: "$semibold" }}>Machine-readable contract</Text>
             <Heading size="h2">The repository states the rules before an agent changes code.</Heading>
             <Text size="lg" css={{ color: "$mutedForeground" }}>
-              vscd.json selects providers. AGENTS.md defines the boundaries. Automated checks prove the result before release.
+              ribbon.json selects providers. AGENTS.md defines the boundaries. Automated checks prove the result before release.
             </Text>
           </Stack>
           <Stack as="ul" gap="$3" css={{ margin: 0, padding: 0, listStyle: "none" }}>
@@ -39,7 +42,7 @@ export function ManifestSection() {
             ))}
           </Stack>
           <Flex>
-            <MarketingActionLink action={{ label: "Read the repository guide", href: "https://github.com/Paul-M-Kallarackal/VSCD/blob/main/README.md", external: true, variant: "outline", icon: <ArrowRightIcon aria-hidden="true" size={18} /> }} />
+            <ActionLink href="#workflow" variant="outline" icon={<ArrowRightIcon aria-hidden="true" size={18} />}>Review the workflow</ActionLink>
           </Flex>
         </Stack>
         </Grid>

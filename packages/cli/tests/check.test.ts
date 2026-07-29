@@ -5,28 +5,22 @@ import { describe, expect, it } from "vitest";
 import { runCodexCheck } from "../src/check.js";
 
 const designSystem = {
-  source: "../design-system",
-  repository: "https://github.com/Paul-M-Kallarackal/design-system",
-  commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
-  packages: [
-    "@paul/ui-core",
-    "@paul/ui-icons",
-    "@paul/ui-patterns",
-    "@paul/ui-tokens",
-    "@paul/ui-themes"
-  ],
-  requiredComponents: ["DatePicker"]
+  provider: "strawn",
+  source: "npm",
+  version: "0.1.0",
+  packages: ["strawn", "strawn-icons"],
+  requiredComponents: ["ThemeProvider", "TooltipProvider"]
 };
 
 describe("Codex check", () => {
   it("detects a public table without RLS", async () => {
-    const root = await mkdtemp(join(tmpdir(), "vscd-check-"));
+    const root = await mkdtemp(join(tmpdir(), "ribbon-check-"));
     await mkdir(join(root, "supabase", "migrations"), { recursive: true });
     await writeFile(join(root, "package.json"), "{}", "utf8");
     await writeFile(join(root, ".env.example"), "VITE_SUPABASE_URL=", "utf8");
     await writeFile(join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'", "utf8");
     await writeFile(
-      join(root, "vscd.json"),
+      join(root, "ribbon.json"),
       JSON.stringify({
         name: "Test",
         slug: "test",
@@ -53,7 +47,7 @@ describe("Codex check", () => {
   });
 
   it("requires the Hostinger magic-link route when mail is configured", async () => {
-    const root = await mkdtemp(join(tmpdir(), "vscd-mail-check-"));
+    const root = await mkdtemp(join(tmpdir(), "ribbon-mail-check-"));
     await mkdir(join(root, ".github", "workflows"), { recursive: true });
     await mkdir(join(root, "supabase", "migrations"), { recursive: true });
     await mkdir(join(root, "supabase", "tests"), { recursive: true });
@@ -82,7 +76,7 @@ describe("Codex check", () => {
       "utf8"
     );
     await writeFile(
-      join(root, "vscd.json"),
+      join(root, "ribbon.json"),
       JSON.stringify({
         name: "Mail Test",
         slug: "mail-test",
@@ -114,15 +108,21 @@ describe("Codex check", () => {
     expect(results.find((check) => check.id === "hostinger:mail-api")?.ok).toBe(false);
   });
 
-  it("rejects UI-library bypasses and native date inputs", async () => {
-    const root = await mkdtemp(join(tmpdir(), "vscd-design-system-check-"));
+  it("rejects UI-library bypasses and missing Strawn wiring", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ribbon-design-system-check-"));
     await mkdir(join(root, "src"), { recursive: true });
     await writeFile(
       join(root, "package.json"),
-      JSON.stringify({ dependencies: { "lucide-react": "latest" } }),
+      JSON.stringify({
+        dependencies: {
+          "lucide-react": "latest",
+          strawn: "0.1.0",
+          "strawn-icons": "0.1.0"
+        }
+      }),
       "utf8"
     );
-    await writeFile(join(root, ".env.example"), "DESIGN_SYSTEM_COMMIT=fca3a35e26117f708000e8880e6c1fbabbfb3099\n# DESIGN_SYSTEM_DEPLOY_KEY", "utf8");
+    await writeFile(join(root, ".env.example"), "", "utf8");
     await writeFile(join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'", "utf8");
     await writeFile(
       join(root, "src", "App.tsx"),
@@ -130,7 +130,7 @@ describe("Codex check", () => {
       "utf8"
     );
     await writeFile(
-      join(root, "vscd.json"),
+      join(root, "ribbon.json"),
       JSON.stringify({
         name: "Bypass Test",
         slug: "bypass-test",
@@ -150,6 +150,6 @@ describe("Codex check", () => {
     const results = await runCodexCheck(root);
     expect(results.find((check) => check.id === "design-system:no-bypasses")?.ok).toBe(false);
     expect(results.find((check) => check.id === "design-system:imports")?.ok).toBe(false);
-    expect(results.find((check) => check.id === "design-system:test-isolation")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "design-system:packages")?.ok).toBe(true);
   });
 });

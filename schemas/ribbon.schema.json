@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/Paul-M-Kallarackal/VSCD/main/schemas/vscd.schema.json",
-  "title": "VSCD project manifest",
+  "$id": "urn:ribbon:manifest:v2",
+  "title": "Ribbon project manifest",
   "type": "object",
   "required": ["manifestVersion", "name", "slug", "framework", "providers", "urls", "status"],
   "properties": {
@@ -114,31 +114,26 @@
         },
         "designSystem": {
           "type": "object",
-          "required": ["source", "repository", "commit", "packages", "requiredComponents"],
+          "required": ["provider", "source", "version", "packages", "requiredComponents"],
           "properties": {
-            "source": {
-              "type": "string",
-              "minLength": 1,
-              "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?![\\\\/]{1,2}).+"
-            },
-            "repository": { "type": "string", "format": "uri" },
-            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "provider": { "const": "strawn" },
+            "source": { "const": "npm" },
+            "version": { "const": "0.1.0" },
             "packages": {
               "type": "array",
               "prefixItems": [
-                { "const": "@paul/ui-core" },
-                { "const": "@paul/ui-icons" },
-                { "const": "@paul/ui-patterns" },
-                { "const": "@paul/ui-tokens" },
-                { "const": "@paul/ui-themes" }
+                { "const": "strawn" },
+                { "const": "strawn-icons" }
               ],
-              "minItems": 5,
-              "maxItems": 5
+              "minItems": 2,
+              "maxItems": 2
             },
             "requiredComponents": {
               "type": "array",
-              "contains": { "const": "DatePicker" },
-              "minContains": 1
+              "allOf": [
+                { "contains": { "const": "ThemeProvider" }, "minContains": 1 },
+                { "contains": { "const": "TooltipProvider" }, "minContains": 1 }
+              ]
             }
           }
         }
@@ -153,7 +148,7 @@
         "properties": { "projectType": { "const": "control-plane" } },
         "required": ["projectType"]
       },
-      "then": { "properties": { "slug": { "const": "vscd" } } }
+      "then": { "properties": { "slug": { "const": "ribbon" } } }
     }
   ]
 }

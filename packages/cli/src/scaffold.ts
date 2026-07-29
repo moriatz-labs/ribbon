@@ -1,9 +1,9 @@
-import { cp, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { projectManifestSchema, type ProjectManifest } from "@vscd/core";
+import { projectManifestSchema, type ProjectManifest } from "@moriatz/ribbon-core";
 
-export const DEFAULT_DESIGN_SYSTEM_COMMIT = "ecd03637e6cb5f2422169d02cae234760ccb887d";
+export const DEFAULT_STRAWN_VERSION = "0.1.0";
 export const DEFAULT_STACK = {
   dns: "hostinger",
   backend: "supabase",
@@ -45,20 +45,9 @@ async function replaceInFiles(path: string, replacements: Record<string, string>
   }
 }
 
-function findVscdRoot() {
+function findRibbonRoot() {
   const currentFile = fileURLToPath(import.meta.url);
   return resolve(dirname(currentFile), "../../..");
-}
-
-function designSystemSourceForManifest(targetPath: string) {
-  const configuredSource = process.env.DESIGN_SYSTEM_SOURCE;
-  if (!configuredSource) return "../design-system";
-
-  const relativeSource = relative(resolve(targetPath), resolve(configuredSource));
-  if (!relativeSource) return ".";
-
-  const portableSource = relativeSource.split(sep).join("/");
-  return portableSource.startsWith(".") ? portableSource : `./${portableSource}`;
 }
 
 function normalizeOptions(titleOrOptions?: string | ScaffoldOptions, legacyDomain?: string): ScaffoldOptions {
@@ -109,17 +98,11 @@ function providerManifest(
     dns,
     mail,
     designSystem: {
-      source: "../design-system",
-      repository: "https://github.com/Paul-M-Kallarackal/design-system",
-      commit: DEFAULT_DESIGN_SYSTEM_COMMIT,
-      packages: [
-        "@paul/ui-core",
-        "@paul/ui-icons",
-        "@paul/ui-patterns",
-        "@paul/ui-tokens",
-        "@paul/ui-themes"
-      ],
-      requiredComponents: ["DatePicker"]
+      provider: "strawn",
+      source: "npm",
+      version: DEFAULT_STRAWN_VERSION,
+      packages: ["strawn", "strawn-icons"],
+      requiredComponents: ["ThemeProvider", "TooltipProvider"]
     }
   };
 }
@@ -197,13 +180,11 @@ async function writeEnvironmentExample(
       ];
   lines.push(
     `PUBLIC_APP_URL=https://${slug}.${domain}`,
-    `DESIGN_SYSTEM_COMMIT=${DEFAULT_DESIGN_SYSTEM_COMMIT}`,
     "",
     "# GitHub Actions secrets, never browser variables:",
     ...(options.deploymentProvider === "vercel"
       ? ["# VERCEL_TOKEN", "# VERCEL_ORG_ID", "# VERCEL_PROJECT_ID"]
       : ["# NETLIFY_AUTH_TOKEN", "# NETLIFY_SITE_ID"]),
-    "# DESIGN_SYSTEM_DEPLOY_KEY is server-only; never prefix it with VITE_.",
     ...(options.dnsProvider === "hostinger"
       ? ["# HOSTINGER_API_TOKEN", `# HOSTINGER_DOMAIN=${domain}`]
       : ["# CLOUDFLARE_API_TOKEN", "# CLOUDFLARE_ZONE_ID", `# CLOUDFLARE_DOMAIN=${domain}`]),
@@ -237,8 +218,13 @@ export async function scaffoldProject(
   }
   const selected = { dnsProvider, backendProvider, deploymentProvider, mailProvider };
 
-  const templatePath = join(findVscdRoot(), "templates", "crud-app");
+  const templatePath = join(findRibbonRoot(), "templates", "crud-app");
   await cp(templatePath, targetPath, { recursive: true, errorOnExist: true, force: false });
+  await mkdir(join(targetPath, "schemas"), { recursive: true });
+  await cp(
+    join(findRibbonRoot(), "schemas", "ribbon.schema.json"),
+    join(targetPath, "schemas", "ribbon.schema.json")
+  );
   await replaceInFiles(targetPath, {
     "__APP_SLUG__": slug,
     "__APP_TITLE__": rawOptions.title ?? titleFromSlug(slug),
@@ -246,18 +232,15 @@ export async function scaffoldProject(
     "__BASE_DOMAIN__": domain,
     "__BACKEND_PROVIDER__": backendProvider,
     "__AUTH_DELIVERY__": mailProvider,
-    "__DESIGN_SYSTEM_COMMIT__": DEFAULT_DESIGN_SYSTEM_COMMIT,
-    "__DESIGN_SYSTEM_SOURCE__": designSystemSourceForManifest(targetPath),
     "__CREATED_AT__": new Date().toISOString()
   });
 
-  const manifestPath = join(targetPath, "vscd.json");
+  const manifestPath = join(targetPath, "ribbon.json");
   const manifestSource = JSON.parse(await readFile(manifestPath, "utf8")) as Record<string, unknown>;
   const manifest = projectManifestSchema.parse({
     ...manifestSource,
     providers: providerManifest(slug, domain, selected)
   });
-  manifest.providers.designSystem.source = designSystemSourceForManifest(targetPath);
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   await configureProviderFiles(targetPath, selected);
   if (mailProvider === "backend") {

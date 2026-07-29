@@ -6,34 +6,7 @@
     "moduleResolution": "Bundler",
     "ignoreDeprecations": "6.0",
     "noEmit": true,
-    "types": ["vite/client"],
-    "baseUrl": ".",
-    "paths": {
-      "@paul/ui-core": [
-        "../../../../../design-system/packages/ui_core/src/index.ts",
-        "../../.vercel-design-system/packages/ui_core/src/index.ts"
-      ],
-      "@paul/ui-core/marketing": [
-        "../../../../../design-system/packages/ui_core/src/marketing.ts",
-        "../../.vercel-design-system/packages/ui_core/src/marketing.ts"
-      ],
-      "@paul/ui-icons": [
-        "../../../../../design-system/packages/ui_icons/src/index.ts",
-        "../../.vercel-design-system/packages/ui_icons/src/index.ts"
-      ],
-      "@paul/ui-patterns": [
-        "../../../../../design-system/packages/ui_patterns/src/index.tsx",
-        "../../.vercel-design-system/packages/ui_patterns/src/index.tsx"
-      ],
-      "@paul/ui-patterns/marketing": [
-        "../../../../../design-system/packages/ui_patterns/src/marketing.ts",
-        "../../.vercel-design-system/packages/ui_patterns/src/marketing.ts"
-      ],
-      "@paul/ui-patterns/data": [
-        "../../../../../design-system/packages/ui_patterns/src/data.ts",
-        "../../.vercel-design-system/packages/ui_patterns/src/data.ts"
-      ]
-    }
+    "types": ["vite/client"]
   },
   "include": ["src"]
 }

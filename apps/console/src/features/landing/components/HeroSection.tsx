@@ -1,6 +1,6 @@
-import { Box, Card, CardContent, CardMedia, Container, Flex, Grid, Heading, Stack, Text } from "@paul/ui-core";
-import { ArrowRightIcon, GitHubIcon } from "@paul/ui-icons";
-import { MarketingActionLink } from "@paul/ui-patterns/marketing";
+import { Box, Card, CardContent, CardMedia, Container, Flex, Grid, Heading, Stack, Text } from "strawn";
+import { ArrowRightIcon } from "strawn-icons";
+import { ActionLink } from "./ActionLink";
 
 export function HeroSection() {
   return (
@@ -9,7 +9,7 @@ export function HeroSection() {
         <Card>
           <CardMedia css={{ padding: "$3", "& img": { display: "block", width: "100%", aspectRatio: "4 / 3", objectFit: "cover", borderRadius: "$lg", "@md": { aspectRatio: "16 / 8" } } }}>
           <img
-            src="/images/vscd-switchboard.webp"
+            src="/images/ribbon-switchboard.webp"
             alt="A tactile modular switchboard routing four capability lanes into replaceable provider blocks."
             width="1536"
             height="1024"
@@ -30,8 +30,8 @@ export function HeroSection() {
                 </Text>
               </Stack>
               <Flex gap="$3" wrap="wrap">
-                <MarketingActionLink action={{ label: "Read the manifest", href: "#manifest", icon: <ArrowRightIcon aria-hidden="true" size={18} /> }} />
-                <MarketingActionLink action={{ label: "View source", href: "https://github.com/Paul-M-Kallarackal/VSCD", external: true, variant: "outline", icon: <GitHubIcon aria-hidden="true" size={18} /> }} />
+                <ActionLink href="#manifest" icon={<ArrowRightIcon aria-hidden="true" size={18} />}>Read the manifest</ActionLink>
+                <ActionLink href="#providers" variant="outline">Explore providers</ActionLink>
               </Flex>
             </Grid>
           </CardContent>
