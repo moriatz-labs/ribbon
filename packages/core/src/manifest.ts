@@ -2,11 +2,6 @@ import { z } from "zod";
 
 const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const urlSchema = z.string().url();
-const repositoryRelativePathSchema = z.string().min(1).refine(
-  (value) => !/^(?:[a-z][a-z0-9+.-]*:|[\\/]{1,2})/i.test(value),
-  { message: "Design-system source must be relative to the project repository." }
-);
-
 export const projectStatusSchema = z.enum([
   "draft",
   "local",
@@ -79,19 +74,17 @@ const mailProviderSchema = z.discriminatedUnion("provider", [
 ]);
 
 const designSystemProviderSchema = z.object({
-  source: repositoryRelativePathSchema,
-  repository: z.string().url(),
-  commit: z.string().regex(/^[0-9a-f]{40}$/),
+  provider: z.literal("strawn"),
+  source: z.literal("npm"),
+  version: z.literal("0.1.0"),
   packages: z.tuple([
-    z.literal("@paul/ui-core"),
-    z.literal("@paul/ui-icons"),
-    z.literal("@paul/ui-patterns"),
-    z.literal("@paul/ui-tokens"),
-    z.literal("@paul/ui-themes")
+    z.literal("strawn"),
+    z.literal("strawn-icons")
   ]),
   requiredComponents: z.array(z.string().min(1)).refine(
-    (components) => components.includes("DatePicker"),
-    { message: "VSCD projects must require Paul's DatePicker for date fields." }
+    (components) =>
+      components.includes("ThemeProvider") && components.includes("TooltipProvider"),
+    { message: "Ribbon projects must require Strawn's ThemeProvider and TooltipProvider." }
   )
 });
 
@@ -163,11 +156,11 @@ const canonicalProjectManifestSchema = z.object({
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional()
 }).superRefine((manifest, context) => {
-  if (manifest.projectType === "control-plane" && manifest.slug !== "vscd") {
+  if (manifest.projectType === "control-plane" && manifest.slug !== "ribbon") {
     context.addIssue({
       code: "custom",
       path: ["projectType"],
-      message: "Only the VSCD repository may declare itself as the control plane."
+      message: "Only the Ribbon repository may declare itself as the control plane."
     });
   }
   if (manifest.providers.backend.provider === "firebase" && manifest.providers.mail?.provider === "hostinger-mail") {

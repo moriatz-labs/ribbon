@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
-const manifest = JSON.parse(await readFile(new URL("../vscd.json", import.meta.url), "utf8"));
+const manifest = JSON.parse(await readFile(new URL("../ribbon.json", import.meta.url), "utf8"));
 const dns = manifest.providers?.dns;
 const deployment = manifest.providers?.deployment;
-if (!dns) throw new Error("vscd.json does not select a DNS provider.");
+if (!dns) throw new Error("ribbon.json does not select a DNS provider.");
 if (!dns.domain || !dns.hostname) throw new Error("The DNS provider requires domain and hostname metadata.");
 
 const domain = dns.domain.toLowerCase().replace(/\.$/, "");
@@ -72,7 +72,7 @@ async function cloudflare() {
     && existing?.proxied === false
     && existing?.ttl === ttl;
   if (!unchanged) {
-    const body = JSON.stringify({ type: "CNAME", name: hostname, content: target, ttl, proxied: false, comment: "Managed by VSCD" });
+    const body = JSON.stringify({ type: "CNAME", name: hostname, content: target, ttl, proxied: false, comment: "Managed by Ribbon" });
     await request(existing ? `/${existing.id}` : "", { method: existing ? "PATCH" : "POST", body });
   }
   return { provider: "cloudflare", changed: !unchanged, hostname, target };

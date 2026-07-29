@@ -1,4 +1,4 @@
-import { Badge, Box, Card, CardContent, CardHeader, Container, Grid, Heading, Stack, Surface, Text } from "@paul/ui-core";
+import { Badge, Box, Card, CardContent, CardHeader, Container, Grid, Heading, Stack, Surface, Text } from "strawn";
 import { WORKFLOW_STEPS } from "../constants";
 
 export function WorkflowSection() {
@@ -7,10 +7,10 @@ export function WorkflowSection() {
       <Container>
         <Stack gap="$10">
         <Stack gap="$3" css={{ maxWidth: "$reading" }}>
-          <Text css={{ color: "$primary", fontFamily: "$nav", fontWeight: "$semibold" }}>Agent workflow</Text>
+          <Text css={{ color: "$primary", fontFamily: "$ui", fontWeight: "$semibold" }}>Agent workflow</Text>
           <Heading size="h2">From intent to a reviewed release in three steps.</Heading>
           <Text size="lg" css={{ color: "$mutedForeground" }}>
-            The manifest selects the stack. VSCD generates only what that stack needs, then proves the result before production.
+            The manifest selects the stack. Ribbon generates only what that stack needs, then proves the result before production.
           </Text>
         </Stack>
         <Grid columns={{ initial: "1fr", md: "repeat(3, minmax(0, 1fr))" }} gap="$5">

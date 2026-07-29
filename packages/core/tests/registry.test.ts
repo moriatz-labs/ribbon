@@ -1,6 +1,7 @@
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { projectManifestSchema, readRegistry, upsertProject, type ProjectManifest } from "../src/index.js";
 
@@ -20,17 +21,11 @@ const project: ProjectManifest = {
       ttl: 300
     },
     designSystem: {
-      source: "../design-system",
-      repository: "https://github.com/Paul-M-Kallarackal/design-system",
-      commit: "fca3a35e26117f708000e8880e6c1fbabbfb3099",
-      packages: [
-        "@paul/ui-core",
-        "@paul/ui-icons",
-        "@paul/ui-patterns",
-        "@paul/ui-tokens",
-        "@paul/ui-themes"
-      ],
-      requiredComponents: ["DatePicker"]
+      provider: "strawn",
+      source: "npm",
+      version: "0.1.0",
+      packages: ["strawn", "strawn-icons"],
+      requiredComponents: ["ThemeProvider", "TooltipProvider"]
     }
   },
   urls: {},
@@ -38,8 +33,20 @@ const project: ProjectManifest = {
 };
 
 describe("registry", () => {
+  it("keeps the published JSON schema aligned with the Strawn npm contract", async () => {
+    const schemaPath = fileURLToPath(
+      new URL("../../../schemas/ribbon.schema.json", import.meta.url)
+    );
+    const schemaSource = await readFile(schemaPath, "utf8");
+
+    expect(schemaSource).toContain('"provider": { "const": "strawn" }');
+    expect(schemaSource).toContain('{ "const": "strawn-icons" }');
+    expect(schemaSource).not.toContain('"commit"');
+    expect(schemaSource).not.toContain("@paul/ui-");
+  });
+
   it("upserts a project atomically", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-registry-"));
     const path = join(directory, "registry.json");
 
     await upsertProject(path, project);
@@ -52,7 +59,7 @@ describe("registry", () => {
   });
 
   it("rejects proxied Cloudflare records in manifests", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-registry-"));
     const path = join(directory, "registry.json");
 
     await expect(
@@ -72,7 +79,7 @@ describe("registry", () => {
   });
 
   it("rejects a Hostinger hostname outside its configured domain", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-registry-"));
     const path = join(directory, "registry.json");
 
     await expect(
@@ -91,32 +98,15 @@ describe("registry", () => {
     ).rejects.toThrow("Hostinger hostname must be a subdomain");
   });
 
-  it("rejects machine-specific design-system paths", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
-
-    await expect(
-      upsertProject(join(directory, "registry.json"), {
-        ...project,
-        providers: {
-          ...project.providers,
-          designSystem: {
-            ...project.providers.designSystem,
-            source: resolve("design-system")
-          }
-        }
-      })
-    ).rejects.toThrow("relative to the project repository");
-  });
-
   it("does not allow generated apps to claim the control-plane exemption", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "vscd-registry-"));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-registry-"));
 
     await expect(
       upsertProject(join(directory, "registry.json"), {
         ...project,
         projectType: "control-plane"
       })
-    ).rejects.toThrow("Only the VSCD repository");
+    ).rejects.toThrow("Only the Ribbon repository");
   });
 
   it("normalizes legacy provider-named manifests into capability slots", () => {

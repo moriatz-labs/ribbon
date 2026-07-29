@@ -1,18 +1,38 @@
-project_id = "vscd"
+project_id = "ribbon"
 
 [api]
 enabled = true
+port = 56321
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
 major_version = 17
+port = 56322
+shadow_port = 56320
+
+[studio]
+enabled = true
+port = 56323
+
+[inbucket]
+enabled = true
+port = 56324
+smtp_port = 56325
+pop3_port = 56326
+
+[analytics]
+enabled = true
+port = 56327
+
+[storage.vector]
+enabled = false
 
 [auth]
 enabled = true
-site_url = "https://vscd.moriatz.com"
-additional_redirect_urls = ["https://vscd.moriatz.com", "https://vscd-silk.vercel.app", "http://127.0.0.1:4310", "http://localhost:4310"]
+site_url = "https://ribbon.moriatz.com"
+additional_redirect_urls = ["https://ribbon.moriatz.com", "https://ribbon-silk.vercel.app", "http://127.0.0.1:4310", "http://localhost:4310"]
 enable_signup = true
 
 [auth.email]

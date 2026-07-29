@@ -11,21 +11,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2024",
-    "types": ["vite/client", "node"],
-    "paths": {
-      "@paul/ui-core": [
-        "__DESIGN_SYSTEM_SOURCE__/packages/ui_core/src/index.ts",
-        ".vercel-design-system/packages/ui_core/src/index.ts"
-      ],
-      "@paul/ui-icons": [
-        "__DESIGN_SYSTEM_SOURCE__/packages/ui_icons/src/index.ts",
-        ".vercel-design-system/packages/ui_icons/src/index.ts"
-      ],
-      "@paul/ui-patterns": [
-        "__DESIGN_SYSTEM_SOURCE__/packages/ui_patterns/src/index.tsx",
-        ".vercel-design-system/packages/ui_patterns/src/index.tsx"
-      ]
-    }
+    "types": ["vite/client", "node"]
   },
   "include": ["api", "src", "vite.config.ts"]
 }

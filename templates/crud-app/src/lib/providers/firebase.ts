@@ -37,7 +37,7 @@ const app = initializeApp(config);
 const auth = getAuth(app);
 const database = getFirestore(app);
 const storage = getStorage(app);
-const emailStorageKey = "vscd.firebase.emailForSignIn";
+const emailStorageKey = "ribbon.firebase.emailForSignIn";
 
 function activeSession(): BackendSession {
   const user = auth.currentUser;

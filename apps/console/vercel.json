@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@vscd/console",
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@moriatz/ribbon-console",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "outputDirectory": "dist",
   "headers": [

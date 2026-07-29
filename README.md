@@ -1,15 +1,15 @@
-# VSCD
+# Ribbon
 
-VSCD is a provider-composable control plane for scaffolding, verifying, and releasing small standalone applications. A versioned `vscd.json` selects DNS, backend, deployment, mail, and design-system capabilities without coupling application code to one infrastructure vendor.
+Ribbon is a provider-composable control plane for scaffolding, verifying, and releasing small standalone applications. A versioned `ribbon.json` selects DNS, backend, deployment, mail, and design-system capabilities without coupling application code to one infrastructure vendor.
 
-![A tactile VSCD switchboard connecting four capability lanes](apps/console/public/images/vscd-switchboard.webp)
+![A tactile Ribbon switchboard connecting four capability lanes](apps/console/public/images/ribbon-switchboard.webp)
 
 ## Status
 
 | Surface | Location | Purpose |
 |---|---|---|
-| Public site | [vscd.moriatz.com](https://vscd.moriatz.com) | Product explanation and framework overview |
-| Source | [GitHub](https://github.com/Paul-M-Kallarackal/VSCD) | CLI, contracts, public site, templates, tests, and release automation |
+| Local site | [localhost:4310](http://localhost:4310) | Product explanation and framework overview |
+| Source | This repository | CLI, contracts, public site, templates, tests, and release automation |
 
 ## Quick start
 
@@ -17,8 +17,8 @@ Requirements: Node.js 24, pnpm 11.7.0, Git, and the CLIs required by the selecte
 
 ```powershell
 pnpm install --frozen-lockfile
-pnpm vscd providers
-pnpm vscd doctor
+pnpm ribbon providers
+pnpm ribbon doctor
 pnpm dev:console
 ```
 
@@ -27,14 +27,14 @@ The public site runs at `http://localhost:4310/`.
 Create and validate an application:
 
 ```powershell
-pnpm vscd init notes-app --target ../notes-app
-pnpm vscd check ../notes-app
+pnpm ribbon init notes-app --target ../notes-app
+pnpm ribbon check ../notes-app
 ```
 
 Select a different provider for any capability:
 
 ```powershell
-pnpm vscd init notes-app `
+pnpm ribbon init notes-app `
   --target ../notes-app `
   --dns-provider cloudflare `
   --backend-provider firebase `
@@ -46,13 +46,13 @@ pnpm vscd init notes-app `
 
 ```mermaid
 flowchart LR
-  A["Intent"] --> M["vscd.json"]
-  M --> C["VSCD CLI"]
+  A["Intent"] --> M["ribbon.json"]
+  M --> C["Ribbon CLI"]
   C --> DNS["DNS adapter"]
   C --> BE["Backend adapter"]
   C --> DEP["Deployment adapter"]
   C --> MAIL["Mail adapter"]
-  DS["Pinned Paul design system"] -. "build input" .-> APP["Generated application"]
+  DS["Strawn packages from npm"] -. "build input" .-> APP["Generated application"]
   BE --> APP
   APP --> DEP
   DNS --> DEP
@@ -69,7 +69,7 @@ The manifest is the source of truth. The CLI reads it, resolves one adapter per 
 | Backend | Supabase | Firebase | Authenticated ownership for records and objects |
 | Deployment | Vercel | Netlify | Verified prebuilt artifact released by GitHub Actions |
 | Mail | Hostinger Mail | Backend-managed | Server-only delivery or selected backend auth flow |
-| Design system | Paul design system | None | Repository-relative local source and exact remote commit |
+| Design system | Strawn | None | Exact npm package versions locked by pnpm |
 
 Provider IDs and required environment names are defined in [`packages/core/src/providers/contracts.ts`](packages/core/src/providers/contracts.ts).
 
@@ -79,7 +79,7 @@ Every managed repository contains a manifest version 2 file:
 
 ```json
 {
-  "$schema": "./schemas/vscd.schema.json",
+  "$schema": "./schemas/ribbon.schema.json",
   "manifestVersion": 2,
   "name": "Notes app",
   "slug": "notes-app",
@@ -91,11 +91,11 @@ Every managed repository contains a manifest version 2 file:
     "deployment": { "provider": "vercel", "cnameTarget": "cname.vercel-dns.com" },
     "mail": { "provider": "hostinger-mail" },
     "designSystem": {
-      "source": "../design-system",
-      "repository": "https://github.com/Paul-M-Kallarackal/design-system",
-      "commit": "<exact-40-character-commit>",
-      "packages": ["@paul/ui-core", "@paul/ui-icons", "@paul/ui-patterns", "@paul/ui-tokens", "@paul/ui-themes"],
-      "requiredComponents": ["DatePicker"]
+      "provider": "strawn",
+      "source": "npm",
+      "version": "0.1.0",
+      "packages": ["strawn", "strawn-icons"],
+      "requiredComponents": ["ThemeProvider", "TooltipProvider"]
     }
   }
 }
@@ -106,28 +106,28 @@ Rules:
 - `projectType: "control-plane"` is reserved for this repository.
 - Generated repositories use `projectType: "application"`.
 - Provider choices are independent capability slots.
-- Local filesystem references are repository-relative. `DESIGN_SYSTEM_SOURCE` is the only supported machine-specific override.
-- Remote builds use the commit in `.design-system-version` and clone into the ignored `.vercel-design-system/` directory.
-- Secret values never belong in `vscd.json`, source, documentation, or browser variables.
+- Strawn is installed from npm at the exact version declared in the manifest and package file.
+- The lockfile pins the resolved package artifacts for local and remote builds.
+- Secret values never belong in `ribbon.json`, source, documentation, or browser variables.
 
-The complete schema is [`schemas/vscd.schema.json`](schemas/vscd.schema.json).
+The complete schema is [`schemas/ribbon.schema.json`](schemas/ribbon.schema.json).
 
 ## Command registry
 
 | Command | Mutates state | Purpose |
 |---|---:|---|
-| `pnpm vscd providers` | No | List built-in adapters and environment contracts |
-| `pnpm vscd doctor` | No | Check local tools and selected-provider authentication |
-| `pnpm vscd inventory --json` | No | Return machine-readable registered project inventory |
-| `pnpm vscd auth <provider>` | Yes | Store supported provider credentials outside the repository |
-| `pnpm vscd init <slug> --target <path>` | Yes | Scaffold a version 2 application |
-| `pnpm vscd dns <project-path>` | Yes | Provision the manifest-selected CNAME without replacing conflicts |
-| `pnpm vscd check <project-path>` | No | Run provider, design-system, security, and release gates |
+| `pnpm ribbon providers` | No | List built-in adapters and environment contracts |
+| `pnpm ribbon doctor` | No | Check local tools and selected-provider authentication |
+| `pnpm ribbon inventory --json` | No | Return machine-readable registered project inventory |
+| `pnpm ribbon auth <provider>` | Yes | Store supported provider credentials outside the repository |
+| `pnpm ribbon init <slug> --target <path>` | Yes | Scaffold a version 2 application |
+| `pnpm ribbon dns <project-path>` | Yes | Provision the manifest-selected CNAME without replacing conflicts |
+| `pnpm ribbon check <project-path>` | No | Run provider, design-system, security, and release gates |
 | `pnpm dev:console` | No | Start the public site locally |
 | `pnpm check` | No | Run the complete workspace quality gate |
-| `pnpm codex:check` | No | Validate this repository as the VSCD control plane |
+| `pnpm codex:check` | No | Validate this repository as the Ribbon control plane |
 
-Use `pnpm vscd <command> --help` for command options.
+Use `pnpm ribbon <command> --help` for command options.
 
 ## Repository layout
 
@@ -139,12 +139,12 @@ Use `pnpm vscd <command> --help` for command options.
 ├── packages/core/              manifest schema, normalization, registry, provider contracts
 ├── packages/cli/               doctor, scaffold, DNS, inventory, checks, and registration
 ├── templates/crud-app/         provider-neutral application template and provider files
-├── schemas/                    JSON schema for vscd.json
+├── schemas/                    JSON schema for ribbon.json
 ├── supabase/                   registry migrations and RLS tests
 ├── docs/                       architecture and provider extension documentation
 ├── scripts/                    build preparation scripts
 ├── AGENTS.md                   binding agent contract
-└── vscd.json                   this control plane's manifest
+└── ribbon.json                   this control plane's manifest
 ```
 
 Detailed design documents:
@@ -155,20 +155,7 @@ Detailed design documents:
 
 ## Design-system resolution
 
-The public site and generated applications consume public `@paul/*` entrypoints.
-
-Resolution order:
-
-1. `DESIGN_SYSTEM_SOURCE`, when explicitly set.
-2. `providers.designSystem.source` from `vscd.json`.
-3. `.vercel-design-system/`, populated for remote builds.
-
-The repository never ships a developer-machine absolute path. Vite, TypeScript, documentation, and public assets use repository-relative or web-relative paths.
-
-Remote builds require one server-only credential:
-
-- `DESIGN_SYSTEM_GITHUB_TOKEN`, or
-- `DESIGN_SYSTEM_DEPLOY_KEY`.
+The public site and generated applications import the public `strawn` and `strawn-icons` package roots. Both packages are fetched from npm, pinned at `0.1.0`, and locked by `pnpm-lock.yaml`. There is no local checkout override, private clone, deploy key, or machine-specific source path.
 
 ## Environment contract
 
@@ -181,7 +168,6 @@ Copy [`.env.example`](.env.example) to an ignored local environment file and pop
 | Cloudflare DNS control plane | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID` |
 | Vercel release | `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
 | Netlify release | `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` |
-| Private design-system build | `DESIGN_SYSTEM_GITHUB_TOKEN` or `DESIGN_SYSTEM_DEPLOY_KEY` |
 
 Admin, DNS, deployment, mail, and private-repository credentials are server-only. They must never use the `VITE_` prefix.
 
@@ -190,10 +176,10 @@ Admin, DNS, deployment, mail, and private-repository credentials are server-only
 Run the narrowest relevant check while editing, then run the full gate:
 
 ```powershell
-pnpm --filter @vscd/console typecheck
-pnpm --filter @vscd/console build
-pnpm --filter @vscd/cli test
-pnpm --filter @vscd/core test
+pnpm --filter @moriatz/ribbon-console typecheck
+pnpm --filter @moriatz/ribbon-console build
+pnpm --filter @moriatz/ribbon-cli test
+pnpm --filter @moriatz/ribbon-core test
 pnpm check
 pnpm codex:check
 ```
@@ -210,7 +196,7 @@ Production release is automatic after a reviewed merge to `main`:
 4. Wait for `CI` to pass.
 5. Merge the reviewed pull request.
 6. Let the `CI` workflow rerun its gates and deploy the verified artifact from `main`.
-7. Verify the Vercel deployment, `vscd.moriatz.com`, DNS, TLS, and public-site browser behavior.
+7. Verify the Vercel deployment, `ribbon.moriatz.com`, DNS, TLS, and public-site browser behavior.
 
 Local production deployment is forbidden. The deploy job runs only on pushes to `main`, after workspace and Supabase RLS gates pass, then builds once and deploys the verified prebuilt artifact.
 

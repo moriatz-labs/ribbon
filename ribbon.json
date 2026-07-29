@@ -1,0 +1,40 @@
+{
+  "$schema": "./schemas/ribbon.schema.json",
+  "manifestVersion": 2,
+  "name": "Ribbon",
+  "slug": "ribbon",
+  "description": "A reusable control plane and scaffold for side projects.",
+  "framework": "vite-react",
+  "projectType": "control-plane",
+  "providers": {
+    "deployment": {
+      "provider": "vercel",
+      "projectId": "prj_gHWmI2t7jCEwgghpGi1Krk58087Z",
+      "teamId": "team_glj2kg2DPNA8NvVu6Um76AWA",
+      "cnameTarget": "cname.vercel-dns.com"
+    },
+    "backend": {
+      "provider": "supabase",
+      "projectRef": "zjvsngbtlbyeumatvzlu",
+      "region": "ap-south-1"
+    },
+    "dns": {
+      "provider": "hostinger",
+      "domain": "moriatz.com",
+      "hostname": "ribbon.moriatz.com",
+      "ttl": 300
+    },
+    "designSystem": {
+      "provider": "strawn",
+      "source": "npm",
+      "version": "0.1.0",
+      "packages": ["strawn", "strawn-icons"],
+      "requiredComponents": ["ThemeProvider", "TooltipProvider"]
+    }
+  },
+  "urls": {
+    "local": "http://localhost:4310",
+    "backend": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu"
+  },
+  "status": "local"
+}

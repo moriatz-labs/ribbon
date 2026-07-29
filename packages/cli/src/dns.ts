@@ -8,7 +8,7 @@ import {
   type DnsProviderConfig,
   type DnsProvisionResult,
   type ProjectManifest
-} from "@vscd/core";
+} from "@moriatz/ribbon-core";
 
 export const DEFAULT_VERCEL_CNAME_TARGET = "cname.vercel-dns.com";
 
@@ -98,17 +98,11 @@ export async function provisionHostingerCname({
         ttl: 300
       },
       designSystem: {
-        source: "../design-system",
-        repository: "https://github.com/Paul-M-Kallarackal/design-system",
-        commit: "0000000000000000000000000000000000000000",
-        packages: [
-          "@paul/ui-core",
-          "@paul/ui-icons",
-          "@paul/ui-patterns",
-          "@paul/ui-tokens",
-          "@paul/ui-themes"
-        ],
-        requiredComponents: ["DatePicker"]
+        provider: "strawn",
+        source: "npm",
+        version: "0.1.0",
+        packages: ["strawn", "strawn-icons"],
+        requiredComponents: ["ThemeProvider", "TooltipProvider"]
       }
     },
     urls: {},

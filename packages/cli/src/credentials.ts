@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { loadEnvFile } from "node:process";
 
-export const defaultCredentialsPath = join(homedir(), ".vscd", "credentials.env");
+export const defaultCredentialsPath = join(homedir(), ".ribbon", "credentials.env");
 
 function assertSingleLine(value: string, name: string) {
   if (!value.trim() || /[\r\n]/.test(value)) {
@@ -12,8 +12,8 @@ function assertSingleLine(value: string, name: string) {
   }
 }
 
-export function loadVscdCredentials(
-  path = process.env.VSCD_CREDENTIALS_PATH ?? defaultCredentialsPath
+export function loadRibbonCredentials(
+  path = process.env.RIBBON_CREDENTIALS_PATH ?? defaultCredentialsPath
 ) {
   if (existsSync(path)) loadEnvFile(path);
   return path;
@@ -47,7 +47,7 @@ export async function saveHostingerCredentials({
   mailApiToken,
   mailboxId,
   mailFrom,
-  path = process.env.VSCD_CREDENTIALS_PATH ?? defaultCredentialsPath
+  path = process.env.RIBBON_CREDENTIALS_PATH ?? defaultCredentialsPath
 }: {
   token: string;
   domain: string;
@@ -87,7 +87,7 @@ export async function saveCloudflareCredentials({
   token,
   zoneId,
   domain,
-  path = process.env.VSCD_CREDENTIALS_PATH ?? defaultCredentialsPath
+  path = process.env.RIBBON_CREDENTIALS_PATH ?? defaultCredentialsPath
 }: {
   token: string;
   zoneId: string;
@@ -101,35 +101,6 @@ export async function saveCloudflareCredentials({
   values.set("CLOUDFLARE_API_TOKEN", token.trim());
   values.set("CLOUDFLARE_ZONE_ID", zoneId.trim());
   values.set("CLOUDFLARE_DOMAIN", domain.trim().toLowerCase());
-  await writeCredentialValues(path, values);
-  return path;
-}
-
-export async function saveDesignSystemCredentials({
-  deployKey,
-  commit,
-  path = process.env.VSCD_CREDENTIALS_PATH ?? defaultCredentialsPath
-}: {
-  deployKey: string;
-  commit: string;
-  path?: string;
-}) {
-  const normalizedKey = deployKey
-    .replace(/^\uFEFF/, "")
-    .replace(/\\n/g, "\n")
-    .replace(/\r/g, "")
-    .replace(/^['\"]|['\"]$/g, "")
-    .trim();
-  if (!normalizedKey.includes("BEGIN OPENSSH PRIVATE KEY")) {
-    throw new Error("DESIGN_SYSTEM_DEPLOY_KEY must be an OpenSSH private key.");
-  }
-  if (!/^[0-9a-f]{40}$/.test(commit)) {
-    throw new Error("DESIGN_SYSTEM_COMMIT must be an exact 40-character Git commit.");
-  }
-
-  const values = await readCredentialValues(path);
-  values.set("DESIGN_SYSTEM_DEPLOY_KEY", normalizedKey.replace(/\n/g, "\\n"));
-  values.set("DESIGN_SYSTEM_COMMIT", commit);
   await writeCredentialValues(path, values);
   return path;
 }

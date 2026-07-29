@@ -1,5 +1,5 @@
 {
-  "name": "@vscd/console",
+  "name": "@moriatz/ribbon-console",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,9 +11,11 @@
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit"
   },
   "dependencies": {
-    "@vscd/core": "workspace:*",
+    "@moriatz/ribbon-core": "workspace:*",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "strawn": "0.1.0",
+    "strawn-icons": "0.1.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",
