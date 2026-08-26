@@ -15,15 +15,23 @@ export function ActionLink({
   icon,
   variant = "primary",
 }: ActionLinkProps) {
+  const className = [
+    "action-link",
+    `action-link--${variant}`,
+    icon ? "action-link--with-icon" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <a
-      className={`action-link action-link--${variant}`}
+      className={className}
       href={href}
-      rel={external ? "noreferrer" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
       target={external ? "_blank" : undefined}
     >
       <span>{children}</span>
-      {icon}
+      {icon ? <span className="action-link__icon">{icon}</span> : null}
     </a>
   );
 }

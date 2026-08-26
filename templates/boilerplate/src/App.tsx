@@ -69,6 +69,16 @@ export function App() {
     }
   }
 
+  async function uploadAttachment(itemId: string, file: File) {
+    if (!backend.uploadAttachment || !session) return;
+    try {
+      await backend.uploadAttachment(session, itemId, file);
+      await loadItems();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The attachment could not be uploaded.");
+    }
+  }
+
   if (!session) {
     return (
       <Box as="main" className="auth-page">
@@ -151,20 +161,16 @@ export function App() {
                     {item.due_date ? <TextStyle textStyle="caption" tone="muted">Review {formatDate(item.due_date)}</TextStyle> : null}
                   </Stack>
                   <Stack gap="$3" css={{ marginTop: "auto" }}>
-                    <TextField
-                      label="Attachment"
-                      type="file"
-                      onChange={async (event) => {
-                        const file = event.currentTarget.files?.[0];
-                        if (!file) return;
-                        try {
-                          await backend.uploadAttachment(session, item.id, file);
-                          await loadItems();
-                        } catch (error) {
-                          setMessage(error instanceof Error ? error.message : "The attachment could not be uploaded.");
-                        }
-                      }}
-                    />
+                    {backend.uploadAttachment ? (
+                      <TextField
+                        label="Attachment"
+                        type="file"
+                        onChange={(event) => {
+                          const file = event.currentTarget.files?.[0];
+                          if (file) void uploadAttachment(item.id, file);
+                        }}
+                      />
+                    ) : null}
                     <Flex justifyContent="flex-end">
                       <Tooltip>
                         <TooltipTrigger asChild>

@@ -57,7 +57,7 @@ describe("scaffoldProject", () => {
     const parent = await mkdtemp(join(tmpdir(), "ribbon-matrix-"));
     const dnsProviders = ["hostinger", "cloudflare"] as const;
     const backendProviders = ["supabase", "firebase"] as const;
-    const deploymentProviders = ["vercel", "netlify"] as const;
+    const deploymentProviders = ["vercel", "netlify", "firebase-hosting"] as const;
 
     for (const dnsProvider of dnsProviders) {
       for (const backendProvider of backendProviders) {
@@ -74,6 +74,7 @@ describe("scaffoldProject", () => {
             JSON.parse(await readFile(join(target, "ribbon.json"), "utf8"))
           );
           const release = await readFile(join(target, ".github", "workflows", "release.yml"), "utf8");
+          const ci = await readFile(join(target, ".github", "workflows", "ci.yml"), "utf8");
           const packageJson = JSON.parse(await readFile(join(target, "package.json"), "utf8")) as {
             dependencies: Record<string, string>;
           };
@@ -87,8 +88,26 @@ describe("scaffoldProject", () => {
               backendProvider === "supabase" ? "VITE_SUPABASE_URL" : "VITE_FIREBASE_PROJECT_ID"
             );
             expect(release).toContain("--no-build");
+          } else if (deploymentProvider === "firebase-hosting") {
+            expect(release).toContain("FIREBASE_SERVICE_ACCOUNT_JSON");
+            expect(release).toContain("firebase deploy");
+            expect(release).toContain(
+              backendProvider === "firebase"
+                ? "--only \"hosting,firestore:rules\""
+                : "--only \"hosting\""
+            );
+            const firebaseConfig = JSON.parse(
+              await readFile(join(target, "firebase.json"), "utf8")
+            ) as { hosting?: { public?: string }; firestore?: unknown; storage?: unknown };
+            expect(firebaseConfig.hosting?.public).toBe("dist");
+            expect(Boolean(firebaseConfig.firestore)).toBe(backendProvider === "firebase");
+            expect(Boolean(firebaseConfig.storage)).toBe(false);
           }
           expect(packageJson.dependencies[backendProvider === "supabase" ? "@supabase/supabase-js" : "firebase"]).toBeTruthy();
+          if (backendProvider === "firebase") {
+            expect(ci).toContain("Firebase authorization contracts");
+            expect(ci).not.toContain("supabase");
+          }
           expect(await readFile(join(target, "src", "lib", "backend.ts"), "utf8")).toContain(`./providers/${backendProvider}`);
           const hasMagicLinkRoute = await readFile(join(target, "api", "auth", "magic-link.ts"), "utf8")
             .then(() => true)
@@ -102,5 +121,78 @@ describe("scaffoldProject", () => {
         }
       }
     }
+  });
+
+  it("can use Firebase's default web.app domain without an external DNS provider", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "ribbon-firebase-only-"));
+    const target = join(parent, "firebase-only");
+
+    await scaffoldProject("firebase-only", target, {
+      includeDomain: false,
+      backendProvider: "firebase",
+      deploymentProvider: "firebase-hosting"
+    });
+
+    const manifest = projectManifestSchema.parse(
+      JSON.parse(await readFile(join(target, "ribbon.json"), "utf8"))
+    );
+    const envExample = await readFile(join(target, ".env.example"), "utf8");
+    const release = await readFile(join(target, ".github", "workflows", "release.yml"), "utf8");
+    const ci = await readFile(join(target, ".github", "workflows", "ci.yml"), "utf8");
+    const backend = await readFile(join(target, "src", "lib", "providers", "firebase.ts"), "utf8");
+    const hasSupabaseDirectory = await readFile(
+      join(target, "supabase", "config.toml"),
+      "utf8"
+    ).then(() => true).catch(() => false);
+
+    expect(manifest.providers).not.toHaveProperty("dns");
+    expect(manifest.providers.backend.provider).toBe("firebase");
+    expect(
+      manifest.providers.backend.provider === "firebase"
+        ? manifest.providers.backend.storage
+        : undefined
+    ).toBe("none");
+    expect(manifest.providers.deployment.provider).toBe("firebase-hosting");
+    expect(manifest.providers.mail?.provider).toBe("backend");
+    expect(envExample).not.toContain("HOSTINGER_");
+    expect(envExample).not.toContain("CLOUDFLARE_");
+    expect(envExample).not.toContain("VITE_FIREBASE_STORAGE_BUCKET");
+    expect(release).toContain("https://${FIREBASE_PROJECT_ID}.web.app");
+    expect(release).not.toContain("VITE_FIREBASE_STORAGE_BUCKET");
+    expect(release).not.toContain(",storage");
+    expect(release).not.toContain("SUPABASE");
+    expect(ci).not.toContain("supabase");
+    expect(backend).not.toContain('from "firebase/storage"');
+    expect(hasSupabaseDirectory).toBe(false);
+  });
+
+  it("keeps Cloud Storage as an explicit Firebase Blaze opt-in", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "ribbon-firebase-storage-"));
+    const target = join(parent, "firebase-storage");
+
+    await scaffoldProject("firebase-storage", target, {
+      includeDomain: false,
+      backendProvider: "firebase",
+      firebaseStorage: "cloud-storage",
+      deploymentProvider: "firebase-hosting"
+    });
+
+    const manifest = projectManifestSchema.parse(
+      JSON.parse(await readFile(join(target, "ribbon.json"), "utf8"))
+    );
+    const release = await readFile(join(target, ".github", "workflows", "release.yml"), "utf8");
+    const envExample = await readFile(join(target, ".env.example"), "utf8");
+    const firebaseConfig = JSON.parse(
+      await readFile(join(target, "firebase.json"), "utf8")
+    ) as { storage?: unknown };
+
+    expect(
+      manifest.providers.backend.provider === "firebase"
+        ? manifest.providers.backend.storage
+        : undefined
+    ).toBe("cloud-storage");
+    expect(release).toContain("--only \"hosting,firestore:rules,storage\"");
+    expect(envExample).toContain("VITE_FIREBASE_STORAGE_BUCKET=");
+    expect(firebaseConfig.storage).toBeTruthy();
   });
 });

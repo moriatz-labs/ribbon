@@ -9,13 +9,10 @@
   "providers": {
     "deployment": {
       "provider": "vercel",
-      "projectId": "prj_gHWmI2t7jCEwgghpGi1Krk58087Z",
-      "teamId": "team_glj2kg2DPNA8NvVu6Um76AWA",
       "cnameTarget": "cname.vercel-dns.com"
     },
     "backend": {
       "provider": "supabase",
-      "projectRef": "zjvsngbtlbyeumatvzlu",
       "region": "ap-south-1"
     },
     "dns": {
@@ -34,7 +31,7 @@
   },
   "urls": {
     "local": "http://localhost:4310",
-    "backend": "https://supabase.com/dashboard/project/zjvsngbtlbyeumatvzlu"
+    "production": "https://ribbon.moriatz.com"
   },
-  "status": "local"
+  "status": "production"
 }

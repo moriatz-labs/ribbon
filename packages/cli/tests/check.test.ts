@@ -1,6 +1,7 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { runCodexCheck } from "../src/check.js";
 
@@ -13,6 +14,172 @@ const designSystem = {
 };
 
 describe("Codex check", () => {
+  it("validates the GitExplore React/Vite, Rust, Neo4j, and Vercel Services fixture", async () => {
+    const root = fileURLToPath(new URL("./fixtures/gitexplore", import.meta.url));
+
+    const results = await runCodexCheck(root);
+    const profileChecks = results.filter((check) => check.id.startsWith("profile:rust-services:"));
+
+    expect(profileChecks.map((check) => check.id)).toEqual([
+      "profile:rust-services:docker",
+      "profile:rust-services:vercel",
+      "profile:rust-services:neo4j-schema",
+      "profile:rust-services:react-vite-entry",
+      "profile:rust-services:design-system",
+      "profile:rust-services:release",
+      "profile:rust-services:readiness"
+    ]);
+    expect(results.filter((check) => !check.ok)).toEqual([]);
+  });
+
+  it("requires a service-local SPA fallback and a plain top-level web catch-all", async () => {
+    const fixture = fileURLToPath(new URL("./fixtures/gitexplore", import.meta.url));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-gitexplore-routes-check-"));
+    const root = join(directory, "gitexplore");
+    await cp(fixture, root, { recursive: true });
+
+    const vercelPath = join(root, "vercel.json");
+    const vercel = JSON.parse(await readFile(vercelPath, "utf8")) as {
+      services: {
+        web: {
+          rewrites?: Array<{ source: string; destination: string }>;
+        };
+      };
+      rewrites: Array<{
+        source: string;
+        destination: { service: string; path?: string };
+        transforms?: Array<{ type: string; op: string; args: string }>;
+      }>;
+    };
+    const serviceRewrites = vercel.services.web.rewrites;
+    if (!serviceRewrites) throw new Error("fixture is missing the web service rewrites");
+
+    delete vercel.services.web.rewrites;
+    await writeFile(vercelPath, JSON.stringify(vercel), "utf8");
+    let results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:vercel")?.ok).toBe(false);
+
+    vercel.services.web.rewrites = serviceRewrites;
+    const webCatchall = vercel.rewrites.find((rewrite) => rewrite.source === "/(.*)");
+    if (!webCatchall) throw new Error("fixture is missing the top-level web catch-all");
+
+    webCatchall.destination.path = "/index.html";
+    await writeFile(vercelPath, JSON.stringify(vercel), "utf8");
+    results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:vercel")?.ok).toBe(false);
+
+    delete webCatchall.destination.path;
+    webCatchall.transforms = [{ type: "request.path", op: "set", args: "/index.html" }];
+    await writeFile(vercelPath, JSON.stringify(vercel), "utf8");
+    results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:vercel")?.ok).toBe(false);
+
+    delete webCatchall.transforms;
+    const catchallIndex = vercel.rewrites.indexOf(webCatchall);
+    vercel.rewrites.splice(catchallIndex, 0, {
+      source: "/login",
+      destination: { service: "web" }
+    });
+    await writeFile(vercelPath, JSON.stringify(vercel), "utf8");
+    results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:vercel")?.ok).toBe(false);
+  });
+
+  it("rejects stale Svelte entry artifacts and incorrect GitExplore Strawn package pins", async () => {
+    const fixture = fileURLToPath(new URL("./fixtures/gitexplore", import.meta.url));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-gitexplore-check-"));
+    const root = join(directory, "gitexplore");
+    await cp(fixture, root, { recursive: true });
+
+    const webPackagePath = join(root, "apps", "web", "package.json");
+    const webPackage = JSON.parse(await readFile(webPackagePath, "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    webPackage.dependencies.strawn = "0.1.0";
+    await writeFile(webPackagePath, JSON.stringify(webPackage), "utf8");
+    await writeFile(
+      join(root, "apps", "web", "svelte.config.js"),
+      "export default { kit: {} };",
+      "utf8"
+    );
+
+    const results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:react-vite-entry")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "profile:rust-services:design-system")?.ok).toBe(false);
+  });
+
+  it("reports an invalid service manifest without misleading generic scaffold failures", async () => {
+    const fixture = fileURLToPath(new URL("./fixtures/gitexplore", import.meta.url));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-invalid-service-check-"));
+    const root = join(directory, "gitexplore");
+    await cp(fixture, root, { recursive: true });
+
+    const manifestPath = join(root, "ribbon.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      providers: { designSystem: Record<string, unknown> };
+    };
+    manifest.providers.designSystem = {
+      provider: "strawn",
+      source: "repository-pin",
+      version: "0.1.0",
+      commit: "7c4bc3421f41cfd91aaa970c2066e8382853d3da",
+      integration: "semantic-token-snapshot"
+    };
+    await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+
+    const results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "manifest:valid")?.ok).toBe(false);
+    expect(results.some((check) => check.id === "design-system:packages")).toBe(false);
+    expect(results.some((check) => check.id === "release:workflow")).toBe(false);
+  });
+
+  it("scopes exact Strawn lock pins to the GitExplore web importer", async () => {
+    const fixture = fileURLToPath(new URL("./fixtures/gitexplore", import.meta.url));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-gitexplore-lock-check-"));
+    const root = join(directory, "gitexplore");
+    await cp(fixture, root, { recursive: true });
+
+    const lockfilePath = join(root, "pnpm-lock.yaml");
+    const lockfile = await readFile(lockfilePath, "utf8");
+    await writeFile(
+      lockfilePath,
+      lockfile.replace("        specifier: 0.2.0\n        version: 0.2.0", "        specifier: 0.1.0\n        version: 0.1.0"),
+      "utf8"
+    );
+
+    const results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:design-system")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "profile:rust-services:react-vite-entry")?.ok).toBe(true);
+  });
+
+  it("rejects a stale Svelte service declaration and browser API-origin override", async () => {
+    const fixture = fileURLToPath(new URL("./fixtures/gitexplore", import.meta.url));
+    const directory = await mkdtemp(join(tmpdir(), "ribbon-gitexplore-origin-check-"));
+    const root = join(directory, "gitexplore");
+    await cp(fixture, root, { recursive: true });
+
+    const vercelPath = join(root, "vercel.json");
+    const vercel = JSON.parse(await readFile(vercelPath, "utf8")) as {
+      services: { web: Record<string, unknown> };
+    };
+    vercel.services.web.framework = "sveltekit";
+    vercel.services.web.bindings = [{
+      type: "service",
+      service: "api",
+      env: "GITEXPLORE_INTERNAL_API_BASE_URL"
+    }];
+    await writeFile(vercelPath, JSON.stringify(vercel), "utf8");
+    await writeFile(
+      join(root, "apps", "web", "src", "api.ts"),
+      "export const apiBaseUrl = import.meta.env.VITE_GITEXPLORE_API_BASE_URL || window.location.origin;",
+      "utf8"
+    );
+
+    const results = await runCodexCheck(root);
+    expect(results.find((check) => check.id === "profile:rust-services:vercel")?.ok).toBe(false);
+    expect(results.find((check) => check.id === "profile:rust-services:react-vite-entry")?.ok).toBe(false);
+  });
+
   it("detects a public table without RLS", async () => {
     const root = await mkdtemp(join(tmpdir(), "ribbon-check-"));
     await mkdir(join(root, "supabase", "migrations"), { recursive: true });

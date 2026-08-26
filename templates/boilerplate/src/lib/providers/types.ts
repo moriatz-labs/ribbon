@@ -28,6 +28,6 @@ export interface BackendAdapter {
   listItems(): Promise<RecordItem[]>;
   createItem(item: NewRecordItem): Promise<void>;
   deleteItem(id: string): Promise<void>;
-  uploadAttachment(session: BackendSession, itemId: string, file: File): Promise<void>;
+  uploadAttachment?(session: BackendSession, itemId: string, file: File): Promise<void>;
 }
 

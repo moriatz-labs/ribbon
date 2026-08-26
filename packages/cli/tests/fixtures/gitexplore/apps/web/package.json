@@ -1,0 +1,14 @@
+{
+  "name": "@gitexplore/web",
+  "private": true,
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "strawn": "0.2.0",
+    "strawn-icons": "0.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.0.5",
+    "vite": "8.2.0"
+  }
+}

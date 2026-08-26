@@ -45,7 +45,7 @@ Ribbon has five manifest-selected capabilities:
 |---|---|
 | `dns` | `hostinger`, `cloudflare` |
 | `backend` | `supabase`, `firebase` |
-| `deployment` | `vercel`, `netlify` |
+| `deployment` | `vercel`, `netlify`, `firebase-hosting` |
 | `mail` | `hostinger-mail`, `backend` |
 | `designSystem` | pinned Strawn design system |
 
@@ -64,7 +64,7 @@ Only the repository-root manifest may use `projectType: "control-plane"`. Genera
 | `apps/console/public/images/` | Public, repository-owned media referenced by web-relative paths |
 | `packages/core/` | Manifest types, validation, normalization, registry, provider contracts |
 | `packages/cli/` | Commands, orchestration, local credential loading, checks |
-| `templates/crud-app/` | Generated application source and provider-specific templates |
+| `templates/boilerplate/` | Generated application source and provider-specific templates |
 | `schemas/ribbon.schema.json` | Machine-readable manifest schema |
 | `supabase/` | Control-plane registry schema and RLS tests |
 | `docs/` | Architecture and extension contracts |
@@ -115,7 +115,7 @@ The authenticated browser console is not currently shipped. New public UI must f
 ### Backend
 
 - Supabase: enable RLS for exposed tables and ship SQL policy tests.
-- Firebase: commit owner-scoped Firestore and Storage rules and their tests.
+- Firebase: commit owner-scoped Firestore rules and their tests. Cloud Storage is an explicit Blaze-only option and requires owner-scoped Storage rules and tests when selected.
 - Keep the browser behind the provider-neutral backend boundary.
 
 ### Deployment
@@ -123,6 +123,7 @@ The authenticated browser console is not currently shipped. New public UI must f
 - Resolve the workflow from `providers.deployment.provider`.
 - Build once, verify, and deploy the prebuilt artifact.
 - Keep production release in GitHub Actions.
+- Firebase Hosting may use its provider-owned `web.app` hostname without an external DNS provider.
 
 ### Mail
 
@@ -139,9 +140,20 @@ Server-only categories:
 - DNS API tokens;
 - mail tokens and mailbox credentials;
 - Vercel or Netlify deployment tokens;
+- Firebase deployment service-account credentials;
 - design-system repository tokens and deploy keys.
 
 Only publishable provider configuration may use a `VITE_` prefix. Credential files stay outside the repository or in ignored local environment files.
+
+### Agent-assisted CLI setup
+
+Agents may run provider CLIs, but must keep authentication and CI credentials separate:
+
+- Use `gh auth login` for GitHub repository access and `vercel login` for the local Vercel session. The account owner approves interactive browser/device-login requests.
+- A GitHub Actions runner cannot use a local Vercel session. Configure `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` as GitHub Actions secrets before enabling the Vercel release workflow.
+- Use `supabase login` only for local Supabase CLI management. Put browser-safe Supabase URL and publishable-key configuration in deployment variables; privileged Supabase keys belong only in server-side secret stores. Do not add Supabase management credentials to CI unless a workflow explicitly needs them.
+- Hostinger's CLI/API uses an account-created API token rather than an interactive account login. Keep `HOSTINGER_API_TOKEN` and `HOSTINGER_DOMAIN` in an ignored local environment file for explicit DNS provisioning. Do not add the Hostinger token to CI unless a restricted DNS workflow explicitly needs it.
+- To add a GitHub Actions secret, agents may use `gh secret set <NAME>` and allow the account owner to enter the value at the secure terminal prompt. Never request, echo, inspect, or persist a credential in chat, source, documentation, generated output, or logs.
 
 ## 9. Command registry
 

@@ -1,0 +1,18 @@
+lockfileVersion: '9.0'
+
+importers:
+
+  apps/web:
+    dependencies:
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8
+      strawn:
+        specifier: 0.2.0
+        version: 0.2.0
+      strawn-icons:
+        specifier: 0.1.1
+        version: 0.1.1
