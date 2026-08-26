@@ -1,35 +1,34 @@
-import { Badge, Box, Card, CardContent, CardHeader, Container, Grid, Heading, Stack, Surface, Text } from "strawn";
+import { Box, Container, Grid, Heading, Stack, Text } from "strawn";
 import { WORKFLOW_STEPS } from "../constants";
 
 export function WorkflowSection() {
   return (
-    <Box as="section" id="workflow" css={{ paddingBlock: "$16" }}>
+    <Box as="section" id="start" className="workflow-section">
       <Container>
-        <Stack gap="$10">
-        <Stack gap="$3" css={{ maxWidth: "$reading" }}>
-          <Text css={{ color: "$primary", fontFamily: "$ui", fontWeight: "$semibold" }}>Agent workflow</Text>
-          <Heading size="h2">From intent to a reviewed release in three steps.</Heading>
-          <Text size="lg" css={{ color: "$mutedForeground" }}>
-            The manifest selects the stack. Ribbon generates only what that stack needs, then proves the result before production.
-          </Text>
-        </Stack>
-        <Grid columns={{ initial: "1fr", md: "repeat(3, minmax(0, 1fr))" }} gap="$5">
-          {WORKFLOW_STEPS.map((step) => (
-            <Card css={{ height: "100%" }} key={step.number}>
-              <CardHeader>
-                <Badge>{step.number}</Badge>
-                <Heading size="h3">{step.title}</Heading>
-                <Text>{step.description}</Text>
-              </CardHeader>
-              <CardContent css={{ marginTop: "auto" }}>
-                <Surface tone="inset" radius="sm" padding="sm">
-                  <Text size="xs" css={{ fontFamily: "$mono", overflowWrap: "anywhere" }}>{step.command}</Text>
-                </Surface>
-              </CardContent>
-            </Card>
-          ))}
+        <Grid
+          columns={{ initial: "minmax(0, 1fr)", lg: "minmax(0, .72fr) minmax(28rem, 1.28fr)" }}
+          gap="$12"
+        >
+          <Stack className="workflow-copy" gap="$4">
+            <Text className="eyebrow" size="xs">Use Ribbon</Text>
+            <Heading size="h2">Three commands. One clear path.</Heading>
+            <Text size="lg">
+              See the choices, create only the selected stack, then prove the result.
+            </Text>
+          </Stack>
+
+          <Box as="ol" className="command-list">
+            {WORKFLOW_STEPS.map((step) => (
+              <Box as="li" className="command-row" key={step.number}>
+                <Text className="command-number" size="xs">{step.number}</Text>
+                <Stack gap="$1">
+                  <Text className="command-title" size="sm">{step.title}</Text>
+                  <Box as="code" className="command-code">{step.command}</Box>
+                </Stack>
+              </Box>
+            ))}
+          </Box>
         </Grid>
-        </Stack>
       </Container>
     </Box>
   );

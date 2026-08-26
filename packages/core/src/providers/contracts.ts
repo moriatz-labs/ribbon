@@ -1,4 +1,4 @@
-export type ProviderCapability = "dns" | "backend" | "deployment" | "mail";
+export type ProviderCapability = "dns" | "backend" | "graph" | "auth" | "deployment" | "mail";
 
 export interface ProviderDefinition {
   id: string;
@@ -7,6 +7,7 @@ export interface ProviderDefinition {
   description: string;
   requiredEnvironment: readonly string[];
   optionalEnvironment?: readonly string[];
+  validationOnly?: boolean;
 }
 
 export interface DnsProvisionInput {
@@ -59,14 +60,52 @@ export const providerCatalog = {
       id: "firebase",
       capability: "backend",
       displayName: "Firebase",
-      description: "Firebase Auth, Firestore, and Cloud Storage with security rules.",
+      description: "Firebase Auth and Firestore, with optional Blaze-only Cloud Storage.",
       requiredEnvironment: [
         "VITE_FIREBASE_API_KEY",
         "VITE_FIREBASE_AUTH_DOMAIN",
         "VITE_FIREBASE_PROJECT_ID",
-        "VITE_FIREBASE_STORAGE_BUCKET",
         "VITE_FIREBASE_APP_ID"
-      ]
+      ],
+      optionalEnvironment: ["VITE_FIREBASE_STORAGE_BUCKET"]
+    },
+    {
+      id: "rust-axum",
+      capability: "backend",
+      displayName: "Rust/Axum container",
+      description: "Validation-only backend for the GitExplore React/Vite and Vercel Services profile.",
+      requiredEnvironment: ["GITEXPLORE_FRONTEND_ORIGIN", "GITEXPLORE_GRAPH_BACKEND"],
+      validationOnly: true
+    }
+  ],
+  graph: [
+    {
+      id: "neo4j-aura",
+      capability: "graph",
+      displayName: "Neo4j Aura",
+      description: "Validation-only managed graph slot for the GitExplore application profile.",
+      requiredEnvironment: [
+        "GITEXPLORE_NEO4J_URI",
+        "GITEXPLORE_NEO4J_USERNAME",
+        "GITEXPLORE_NEO4J_PASSWORD",
+        "GITEXPLORE_NEO4J_DATABASE"
+      ],
+      validationOnly: true
+    }
+  ],
+  auth: [
+    {
+      id: "github-oauth",
+      capability: "auth",
+      displayName: "GitHub OAuth",
+      description: "Validation-only OAuth slot for the GitExplore application profile.",
+      requiredEnvironment: [
+        "GITEXPLORE_GITHUB_CLIENT_ID",
+        "GITEXPLORE_GITHUB_CLIENT_SECRET",
+        "GITEXPLORE_GITHUB_REDIRECT_URI"
+      ],
+      optionalEnvironment: ["GITEXPLORE_GITHUB_SCOPES"],
+      validationOnly: true
     }
   ],
   deployment: [
@@ -83,6 +122,13 @@ export const providerCatalog = {
       displayName: "Netlify",
       description: "Production Netlify deployments through GitHub Actions.",
       requiredEnvironment: ["NETLIFY_AUTH_TOKEN", "NETLIFY_SITE_ID"]
+    },
+    {
+      id: "firebase-hosting",
+      capability: "deployment",
+      displayName: "Firebase Hosting",
+      description: "Static Firebase Hosting deployments through GitHub Actions.",
+      requiredEnvironment: ["FIREBASE_PROJECT_ID", "FIREBASE_SERVICE_ACCOUNT_JSON"]
     }
   ],
   mail: [
@@ -108,7 +154,7 @@ export function listProviderDefinitions(capability?: ProviderCapability) {
   return Object.values(providerCatalog).flat();
 }
 
-export function getProviderDefinition(capability: ProviderCapability, id: string) {
+export function getProviderDefinition(capability: ProviderCapability, id: string): ProviderDefinition {
   const definition = providerCatalog[capability].find((candidate) => candidate.id === id);
   if (!definition) {
     const supported = providerCatalog[capability].map((candidate) => candidate.id).join(", ");

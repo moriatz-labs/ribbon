@@ -10,7 +10,7 @@
     "name": { "type": "string", "minLength": 1 },
     "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "description": { "type": "string" },
-    "framework": { "const": "vite-react" },
+    "framework": { "enum": ["vite-react", "react-vite-rust-services"] },
     "projectType": { "enum": ["application", "control-plane"], "default": "application" },
     "providers": {
       "type": "object",
@@ -23,11 +23,16 @@
               "required": ["provider"],
               "properties": {
                 "provider": { "const": "vercel" },
+                "mode": { "const": "services" },
                 "projectId": { "type": "string", "minLength": 1 },
                 "projectName": { "type": "string", "minLength": 1 },
                 "teamId": { "type": "string", "minLength": 1 },
                 "teamSlug": { "type": "string", "minLength": 1 },
-                "cnameTarget": { "type": "string", "default": "cname.vercel-dns.com" }
+                "hostname": { "type": "string", "minLength": 1 },
+                "cnameTarget": { "type": "string", "default": "cname.vercel-dns.com" },
+                "cnameTargetVerification": {
+                  "enum": ["vercel-domain-inspect-required", "vercel-domain-inspected"]
+                }
               }
             },
             {
@@ -39,6 +44,15 @@
                 "siteName": { "type": "string", "minLength": 1 },
                 "accountSlug": { "type": "string", "minLength": 1 },
                 "cnameTarget": { "type": "string", "minLength": 1 }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["provider"],
+              "properties": {
+                "provider": { "const": "firebase-hosting" },
+                "projectId": { "type": "string", "minLength": 1 },
+                "siteId": { "type": "string", "minLength": 1 }
               }
             }
           ]
@@ -62,10 +76,100 @@
                 "provider": { "const": "firebase" },
                 "projectId": { "type": "string", "minLength": 1 },
                 "projectName": { "type": "string", "minLength": 1 },
-                "region": { "type": "string", "minLength": 1 }
+                "region": { "type": "string", "minLength": 1 },
+                "storage": {
+                  "enum": ["none", "cloud-storage"],
+                  "default": "cloud-storage"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["provider", "runtime", "entrypoint", "identityStore", "refreshCoordination"],
+              "properties": {
+                "provider": { "const": "rust-axum" },
+                "runtime": { "const": "container" },
+                "entrypoint": { "type": "string", "minLength": 1 },
+                "identityStore": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": ["provider", "productionReady"],
+                      "properties": {
+                        "provider": { "const": "json-file" },
+                        "productionReady": { "const": false }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "provider",
+                        "productionReady",
+                        "encryption",
+                        "durableOAuthState",
+                        "durableSessions"
+                      ],
+                      "properties": {
+                        "provider": { "const": "neo4j" },
+                        "productionReady": { "const": true },
+                        "encryption": {
+                          "type": "object",
+                          "required": ["algorithm", "keyEnvironmentVariable", "required"],
+                          "properties": {
+                            "algorithm": { "const": "xchacha20-poly1305" },
+                            "keyEnvironmentVariable": { "const": "GITEXPLORE_IDENTITY_ENCRYPTION_KEY" },
+                            "required": { "const": true }
+                          }
+                        },
+                        "durableOAuthState": { "const": true },
+                        "durableSessions": { "const": true }
+                      }
+                    }
+                  ]
+                },
+                "refreshCoordination": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": ["provider", "productionReady"],
+                      "properties": {
+                        "provider": { "const": "process-local" },
+                        "productionReady": { "const": false }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": ["provider", "productionReady", "leaseSeconds"],
+                      "properties": {
+                        "provider": { "const": "neo4j-lease" },
+                        "productionReady": { "const": true },
+                        "leaseSeconds": { "type": "integer", "minimum": 5, "maximum": 3600 }
+                      }
+                    }
+                  ]
+                }
               }
             }
           ]
+        },
+        "graph": {
+          "type": "object",
+          "required": ["provider", "schema", "migrationMode"],
+          "properties": {
+            "provider": { "const": "neo4j-aura" },
+            "schema": { "type": "string", "minLength": 1 },
+            "migrationMode": {
+              "enum": ["release-gate-required", "release-gate", "release-gated-idempotent-cli"]
+            }
+          }
+        },
+        "auth": {
+          "type": "object",
+          "required": ["provider", "callbackPath"],
+          "properties": {
+            "provider": { "const": "github-oauth" },
+            "callbackPath": { "type": "string", "pattern": "^/" }
+          }
         },
         "dns": {
           "oneOf": [
@@ -113,34 +217,84 @@
           ]
         },
         "designSystem": {
-          "type": "object",
-          "required": ["provider", "source", "version", "packages", "requiredComponents"],
-          "properties": {
-            "provider": { "const": "strawn" },
-            "source": { "const": "npm" },
-            "version": { "const": "0.1.0" },
-            "packages": {
-              "type": "array",
-              "prefixItems": [
-                { "const": "strawn" },
-                { "const": "strawn-icons" }
-              ],
-              "minItems": 2,
-              "maxItems": 2
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["provider", "source", "version", "packages", "requiredComponents"],
+              "properties": {
+                "provider": { "const": "strawn" },
+                "source": { "const": "npm" },
+                "version": { "const": "0.1.0" },
+                "packages": {
+                  "type": "array",
+                  "prefixItems": [
+                    { "const": "strawn" },
+                    { "const": "strawn-icons" }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "requiredComponents": {
+                  "type": "array",
+                  "allOf": [
+                    { "contains": { "const": "ThemeProvider" }, "minContains": 1 },
+                    { "contains": { "const": "TooltipProvider" }, "minContains": 1 }
+                  ]
+                }
+              }
             },
-            "requiredComponents": {
-              "type": "array",
-              "allOf": [
-                { "contains": { "const": "ThemeProvider" }, "minContains": 1 },
-                { "contains": { "const": "TooltipProvider" }, "minContains": 1 }
-              ]
+            {
+              "type": "object",
+              "required": ["provider", "source", "version", "packages"],
+              "properties": {
+                "provider": { "const": "strawn" },
+                "source": { "const": "npm" },
+                "version": { "const": "0.2.0" },
+                "packages": {
+                  "type": "array",
+                  "prefixItems": [
+                    { "const": "strawn" },
+                    { "const": "strawn-icons" }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
             }
-          }
+          ]
         }
       }
     },
     "urls": { "type": "object" },
-    "status": { "enum": ["draft", "local", "preview", "production", "archived"] }
+    "status": { "enum": ["draft", "local", "preview", "production", "archived"] },
+    "runtimeEnvironment": {
+      "type": "object",
+      "required": ["public", "server"],
+      "properties": {
+        "public": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^PUBLIC_[A-Z0-9_]+$" },
+          "uniqueItems": true
+        },
+        "server": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^GITEXPLORE_[A-Z0-9_]+$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "productionReadiness": {
+      "type": "object",
+      "required": ["ready", "blockers"],
+      "properties": {
+        "ready": { "type": "boolean" },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "uniqueItems": true
+        }
+      }
+    }
   },
   "allOf": [
     {
@@ -149,6 +303,181 @@
         "required": ["projectType"]
       },
       "then": { "properties": { "slug": { "const": "ribbon" } } }
+    },
+    {
+      "if": {
+        "properties": { "framework": { "const": "react-vite-rust-services" } },
+        "required": ["framework"]
+      },
+      "then": {
+        "required": ["projectType", "runtimeEnvironment", "productionReadiness"],
+        "properties": {
+          "projectType": { "const": "application" },
+          "providers": {
+            "required": ["deployment", "backend", "graph", "auth", "designSystem"],
+            "properties": {
+              "deployment": {
+                "required": [
+                  "provider",
+                  "mode",
+                  "projectName",
+                  "hostname",
+                  "cnameTarget",
+                  "cnameTargetVerification"
+                ],
+                "properties": {
+                  "provider": { "const": "vercel" },
+                  "mode": { "const": "services" }
+                }
+              },
+              "backend": {
+                "properties": { "provider": { "const": "rust-axum" } }
+              },
+              "graph": {
+                "properties": { "provider": { "const": "neo4j-aura" } }
+              },
+              "auth": {
+                "properties": { "provider": { "const": "github-oauth" } }
+              },
+              "designSystem": {
+                "required": ["provider", "source", "version", "packages"],
+                "properties": {
+                  "source": { "const": "npm" },
+                  "version": { "const": "0.2.0" }
+                }
+              }
+            }
+          },
+          "runtimeEnvironment": {
+            "properties": {
+              "public": { "maxItems": 0 },
+              "server": {
+                "allOf": [
+                  { "contains": { "const": "GITEXPLORE_FRONTEND_ORIGIN" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_GITHUB_CLIENT_ID" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_GITHUB_CLIENT_SECRET" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_GITHUB_REDIRECT_URI" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_GITHUB_SCOPES" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_GRAPH_BACKEND" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_DEPLOYMENT_MODE" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_IDENTITY_ENCRYPTION_KEY" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_NEO4J_URI" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_NEO4J_USERNAME" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_NEO4J_PASSWORD" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_NEO4J_DATABASE" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_NEO4J_MAX_TOTAL_NODES" }, "minContains": 1 },
+                  { "contains": { "const": "GITEXPLORE_NEO4J_MAX_TOTAL_RELATIONSHIPS" }, "minContains": 1 }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "framework": { "const": "vite-react" } },
+        "required": ["framework"]
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            { "required": ["runtimeEnvironment"] },
+            { "required": ["productionReadiness"] }
+          ]
+        },
+        "properties": {
+          "providers": {
+            "not": {
+              "anyOf": [
+                { "required": ["graph"] },
+                { "required": ["auth"] }
+              ]
+            },
+            "properties": {
+              "backend": {
+                "properties": { "provider": { "enum": ["supabase", "firebase"] } }
+              },
+              "designSystem": {
+                "required": ["provider", "source", "version", "packages", "requiredComponents"],
+                "properties": {
+                  "source": { "const": "npm" },
+                  "version": { "const": "0.1.0" }
+                }
+              },
+              "deployment": {
+                "not": {
+                  "properties": {
+                    "provider": { "const": "vercel" },
+                    "mode": { "const": "services" }
+                  },
+                  "required": ["provider", "mode"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "productionReadiness": {
+            "properties": { "ready": { "const": true } },
+            "required": ["ready"]
+          }
+        },
+        "required": ["productionReadiness"]
+      },
+      "then": {
+        "properties": {
+          "productionReadiness": {
+            "properties": { "blockers": { "maxItems": 0 } }
+          },
+          "providers": {
+            "properties": {
+              "deployment": {
+                "properties": {
+                  "cnameTargetVerification": { "const": "vercel-domain-inspected" }
+                }
+              },
+              "backend": {
+                "properties": {
+                  "identityStore": {
+                    "properties": { "productionReady": { "const": true } }
+                  },
+                  "refreshCoordination": {
+                    "properties": { "productionReady": { "const": true } }
+                  }
+                }
+              },
+              "graph": {
+                "properties": {
+                  "migrationMode": { "enum": ["release-gate", "release-gated-idempotent-cli"] }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "productionReadiness": {
+            "properties": { "ready": { "const": false } },
+            "required": ["ready"]
+          }
+        },
+        "required": ["productionReadiness"]
+      },
+      "then": {
+        "properties": {
+          "productionReadiness": {
+            "properties": { "blockers": { "minItems": 1 } }
+          }
+        }
+      }
     }
   ]
 }

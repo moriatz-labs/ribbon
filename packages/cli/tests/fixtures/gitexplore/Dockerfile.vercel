@@ -1,0 +1,6 @@
+FROM rust:1.91.0-bookworm AS builder
+RUN cargo build --locked --release
+FROM debian:bookworm-slim
+ENV PORT=80
+USER gitexplore
+CMD ["gitexplore", "serve"]

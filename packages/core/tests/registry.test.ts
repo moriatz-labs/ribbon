@@ -33,7 +33,7 @@ const project: ProjectManifest = {
 };
 
 describe("registry", () => {
-  it("keeps the published JSON schema aligned with the Strawn npm contract", async () => {
+  it("keeps the published JSON schema aligned with both npm Strawn contracts", async () => {
     const schemaPath = fileURLToPath(
       new URL("../../../schemas/ribbon.schema.json", import.meta.url)
     );
@@ -41,8 +41,28 @@ describe("registry", () => {
 
     expect(schemaSource).toContain('"provider": { "const": "strawn" }');
     expect(schemaSource).toContain('{ "const": "strawn-icons" }');
-    expect(schemaSource).not.toContain('"commit"');
+    expect(schemaSource).toContain('"version": { "const": "0.1.0" }');
+    expect(schemaSource).toContain('"version": { "const": "0.2.0" }');
+    expect(schemaSource).toContain('"framework": { "enum": ["vite-react", "react-vite-rust-services"] }');
+    expect(schemaSource).not.toContain("sveltekit-rust-services");
+    expect(schemaSource).not.toContain("repository-pin");
     expect(schemaSource).not.toContain("@paul/ui-");
+    expect(schemaSource).toContain('"provider": { "const": "firebase-hosting" }');
+  });
+
+  it("accepts Firebase Hosting without external DNS", () => {
+    const firebaseProject = projectManifestSchema.parse({
+      ...project,
+      providers: {
+        deployment: { provider: "firebase-hosting" },
+        backend: { provider: "firebase", storage: "none" },
+        mail: { provider: "backend" },
+        designSystem: project.providers.designSystem
+      }
+    });
+
+    expect(firebaseProject.providers.deployment.provider).toBe("firebase-hosting");
+    expect(firebaseProject.providers.dns).toBeUndefined();
   });
 
   it("upserts a project atomically", async () => {
@@ -132,4 +152,3 @@ describe("registry", () => {
     expect(legacy.providers.dns?.provider).toBe("cloudflare");
   });
 });
-

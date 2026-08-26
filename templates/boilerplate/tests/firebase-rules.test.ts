@@ -9,10 +9,5 @@ describe("Firebase authorization rules", () => {
     expect(rules).toContain("allow read, delete");
     expect(rules).toContain("allow update");
   });
-
-  it("binds attachment paths to the authenticated user", async () => {
-    const rules = await readFile(new URL("../storage.rules", import.meta.url), "utf8");
-    expect(rules).toContain("request.auth.uid == userId");
-  });
 });
 

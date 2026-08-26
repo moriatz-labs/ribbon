@@ -11,7 +11,7 @@ Local and remote builds resolve Strawn from the exact npm package versions in `p
 ```mermaid
 flowchart LR
     U["User browser"] --> DNS["DNS adapter\nHostinger or Cloudflare"]
-    DNS --> DEP["Deployment adapter\nVercel or Netlify"]
+    DNS --> DEP["Deployment adapter\nVercel, Netlify, or Firebase Hosting"]
     DEP --> APP["Vite application\nprovider-neutral UI"]
     APP --> BE["Backend adapter\nSupabase or Firebase"]
     BE --> AUTH["Identity + authorization"]
@@ -31,7 +31,7 @@ flowchart LR
 |---|---|---|
 | Browser | UI, user session, provider-neutral backend calls | Publishable Firebase or Supabase configuration |
 | Backend provider | Identity, record authorization, object access | User identity at runtime; admin credentials only for trusted operations |
-| Deployment provider | Static app and optional serverless endpoints | Vercel or Netlify credentials in GitHub Actions |
+| Deployment provider | Static app and optional serverless endpoints | Selected provider credentials in GitHub Actions |
 | DNS provider | Authoritative CNAME | Hostinger or Cloudflare token in the control plane |
 | GitHub Actions | Verified production build and selected deployment workflow | Selected adapter secrets and design-system deploy key |
 | Codex/Ribbon | Scaffold, check, inventory, registration, URL handoff | Local authenticated CLI sessions; no logged secret values |
@@ -71,7 +71,7 @@ Ribbon repository
   apps/console        public product site and server-side web functions
   packages/core       manifest normalization, catalog, contracts, API clients
   packages/cli        doctor, inventory, scaffold, DNS, checks, registry
-  templates/crud-app  base app plus provider-specific adapters/workflows
+  templates/boilerplate  base app plus provider-specific adapters/workflows
   supabase/            control-plane registry schema and policy tests
   docs/                public architecture and extension contract
 
@@ -92,4 +92,3 @@ Generated project
 - Production deployment runs only through the generated provider workflow after local and Ribbon checks.
 
 See [Provider architecture](provider-architecture.md) for the extension protocol.
-

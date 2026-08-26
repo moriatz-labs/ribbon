@@ -1,0 +1,55 @@
+name: Firebase Hosting Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify application and provider contracts
+        run: pnpm lint && pnpm test
+      - name: Build once
+        run: pnpm build
+        env:
+          __BACKEND_BUILD_ENV__
+      - name: Authenticate Firebase deployment
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      - name: Deploy the verified artifact and authorization rules
+        run: pnpm --package=firebase-tools@15.15.0 dlx firebase deploy --only "__FIREBASE_DEPLOY_TARGETS__" --project "$FIREBASE_PROJECT_ID" --non-interactive
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      - name: Publish deployment URL
+        shell: bash
+        run: |
+          url="https://${FIREBASE_PROJECT_ID}.web.app"
+          printf '{"project":"__APP_SLUG__","url":"%s","commit":"%s","provider":"firebase-hosting"}\n' "$url" "${{ github.sha }}" > deployment.json
+          cat deployment.json >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deployment-url
+          path: deployment.json
+          retention-days: 30

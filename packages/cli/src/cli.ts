@@ -33,10 +33,10 @@ Default stack: Hostinger DNS + Supabase + Vercel
 
 Commands:
   providers [--json]
-  doctor [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>]
+  doctor [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>] [--no-domain]
   auth <hostinger|cloudflare>
   inventory [--json]
-  init <slug> [--title <name>] [--target <path>] [--domain <domain>] [--dns-provider <id>] [--backend-provider <id>] [--deployment-provider <id>] [--no-domain]
+  init <slug> [--title <name>] [--target <path>] [--domain <domain>] [--dns-provider <id>] [--backend-provider <id>] [--firebase-storage <none|cloud-storage>] [--deployment-provider <id>] [--no-domain]
   dns [project-path] [--target <hostname>]
   check [project-path] [--json]
   register <manifest-path>
@@ -50,7 +50,12 @@ function providerId<T extends ProviderCapability>(
   fallback: string
 ) {
   const id = value ?? fallback;
-  getProviderDefinition(capability, id);
+  const definition = getProviderDefinition(capability, id);
+  if (definition.validationOnly) {
+    throw new Error(
+      `${definition.displayName} is validation-only; Ribbon does not scaffold or provision it.`
+    );
+  }
   return id;
 }
 
@@ -74,6 +79,7 @@ async function main() {
       title: { type: "string" },
       "dns-provider": { type: "string" },
       "backend-provider": { type: "string" },
+      "firebase-storage": { type: "string" },
       "deployment-provider": { type: "string" },
       "mail-provider": { type: "string" }
     }
@@ -100,10 +106,18 @@ async function main() {
 
   const dnsProvider = providerId("dns", values["dns-provider"], DEFAULT_STACK.dns) as "hostinger" | "cloudflare";
   const backendProvider = providerId("backend", values["backend-provider"], DEFAULT_STACK.backend) as "supabase" | "firebase";
-  const deploymentProvider = providerId("deployment", values["deployment-provider"], DEFAULT_STACK.deployment) as "vercel" | "netlify";
+  const deploymentProvider = providerId(
+    "deployment",
+    values["deployment-provider"],
+    DEFAULT_STACK.deployment
+  ) as "vercel" | "netlify" | "firebase-hosting";
 
   if (command === "doctor") {
-    const result = await runDoctor({ dns: dnsProvider, backend: backendProvider, deployment: deploymentProvider });
+    const result = await runDoctor({
+      dns: values["no-domain"] ? undefined : dnsProvider,
+      backend: backendProvider,
+      deployment: deploymentProvider
+    });
     if (values.json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
@@ -129,12 +143,18 @@ async function main() {
       ?? (dnsProvider === "hostinger" ? process.env.HOSTINGER_DOMAIN : process.env.CLOUDFLARE_DOMAIN)
       ?? "moriatz.com";
     const mailProvider = values["mail-provider"] as "hostinger-mail" | "backend" | undefined;
+    const firebaseStorage = values["firebase-storage"] as "none" | "cloud-storage" | undefined;
+    if (firebaseStorage && !["none", "cloud-storage"].includes(firebaseStorage)) {
+      throw new Error("--firebase-storage must be none or cloud-storage.");
+    }
     if (mailProvider) getProviderDefinition("mail", mailProvider);
     await scaffoldProject(firstArgument, target, {
       title: values.title,
       domain,
+      includeDomain: !values["no-domain"],
       dnsProvider,
       backendProvider,
+      firebaseStorage,
       deploymentProvider,
       mailProvider
     });

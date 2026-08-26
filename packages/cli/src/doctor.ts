@@ -9,9 +9,9 @@ interface DoctorCheck {
 }
 
 export interface DoctorProfile {
-  dns: "hostinger" | "cloudflare";
+  dns?: "hostinger" | "cloudflare";
   backend: "supabase" | "firebase";
-  deployment: "vercel" | "netlify";
+  deployment: "vercel" | "netlify" | "firebase-hosting";
 }
 
 async function commandCheck(name: string, args: string[], required = true): Promise<DoctorCheck> {
@@ -39,22 +39,28 @@ export async function runDoctor(profile: DoctorProfile = {
   backend: "supabase",
   deployment: "vercel"
 }) {
-  const deploymentCli = profile.deployment === "vercel" ? "vercel" : "netlify";
+  const deploymentCli = profile.deployment === "firebase-hosting"
+    ? "firebase"
+    : profile.deployment;
   const backendCli = profile.backend === "supabase" ? "supabase" : "firebase";
+  const providerClis = [...new Set([deploymentCli, backendCli])];
   const checks = await Promise.all([
     commandCheck("node", ["--version"]),
     commandCheck("pnpm", ["--version"]),
     commandCheck("git", ["--version"]),
-    commandCheck(deploymentCli, ["--version"]),
-    commandCheck(backendCli, ["--version"])
+    ...providerClis.map((name) => commandCheck(name, ["--version"]))
   ]);
 
   const deploymentAuth = profile.deployment === "vercel"
     ? await runCommand("vercel", ["whoami"])
-    : await runCommand("netlify", ["status", "--json"]);
-  const backendAuth = profile.backend === "supabase"
-    ? await runCommand("supabase", ["projects", "list", "--output", "json"])
-    : await runCommand("firebase", ["projects:list", "--json"]);
+    : profile.deployment === "netlify"
+      ? await runCommand("netlify", ["status", "--json"])
+      : await runCommand("firebase", ["projects:list", "--json"]);
+  const backendAuth = profile.backend === "firebase" && profile.deployment === "firebase-hosting"
+    ? deploymentAuth
+    : profile.backend === "supabase"
+      ? await runCommand("supabase", ["projects", "list", "--output", "json"])
+      : await runCommand("firebase", ["projects:list", "--json"]);
 
   checks.push(
     {
@@ -69,30 +75,38 @@ export async function runDoctor(profile: DoctorProfile = {
       detail: backendAuth.code === 0 ? "authenticated" : backendAuth.stderr || "not authenticated",
       required: true
     },
-    environmentCheck(
-      `${getProviderDefinition("dns", profile.dns).displayName} credentials`,
-      getProviderDefinition("dns", profile.dns).requiredEnvironment,
-      false
-    ),
+    ...(profile.dns
+      ? [
+          environmentCheck(
+            `${getProviderDefinition("dns", profile.dns).displayName} credentials`,
+            getProviderDefinition("dns", profile.dns).requiredEnvironment,
+            false
+          )
+        ]
+      : []),
     environmentCheck(
       `${getProviderDefinition("deployment", profile.deployment).displayName} CI contract`,
       getProviderDefinition("deployment", profile.deployment).requiredEnvironment,
       false
     ),
-    {
-      name: "Hostinger mail",
-      ok: Boolean(
-        process.env.HOSTINGER_MAIL_API_TOKEN
-        && process.env.HOSTINGER_MAILBOX_ID
-        && process.env.HOSTINGER_MAIL_FROM
-      ),
-      detail: process.env.HOSTINGER_MAIL_API_TOKEN
-        && process.env.HOSTINGER_MAILBOX_ID
-        && process.env.HOSTINGER_MAIL_FROM
-        ? "mail API token, mailbox, and sender present"
-        : "optional; backend-managed auth email remains available",
-      required: false
-    }
+    ...(profile.backend === "supabase" && profile.deployment === "vercel"
+      ? [
+          {
+            name: "Hostinger mail",
+            ok: Boolean(
+              process.env.HOSTINGER_MAIL_API_TOKEN
+              && process.env.HOSTINGER_MAILBOX_ID
+              && process.env.HOSTINGER_MAIL_FROM
+            ),
+            detail: process.env.HOSTINGER_MAIL_API_TOKEN
+              && process.env.HOSTINGER_MAILBOX_ID
+              && process.env.HOSTINGER_MAIL_FROM
+              ? "mail API token, mailbox, and sender present"
+              : "optional; backend-managed auth email remains available",
+            required: false
+          }
+        ]
+      : [])
   );
 
   return {

@@ -1,0 +1,25 @@
+name: Release
+on:
+  push:
+    branches: [main]
+concurrency:
+  group: production-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    steps:
+      - uses: actions/cache@v4
+      - run: pnpm install --frozen-lockfile
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - run: pnpm --filter @gitexplore/web check
+      - run: |
+          const readiness = manifest.productionReadiness;
+          const blockers = readiness?.blockers;
+          if (readiness?.ready !== true || blockers.length !== 0) process.exit(1);
+      - run: pnpm exec vercel build --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - run: pnpm exec vercel deploy --prebuilt --prod

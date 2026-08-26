@@ -1,0 +1,76 @@
+{
+  "manifestVersion": 2,
+  "name": "GitExplore",
+  "slug": "gitexplore",
+  "description": "GitHub graph explorer fixture.",
+  "framework": "react-vite-rust-services",
+  "projectType": "application",
+  "providers": {
+    "deployment": {
+      "provider": "vercel",
+      "mode": "services",
+      "projectName": "gitexplore",
+      "hostname": "gitexplore.moriatz.com",
+      "cnameTarget": "cname.vercel-dns-0.com",
+      "cnameTargetVerification": "vercel-domain-inspect-required"
+    },
+    "backend": {
+      "provider": "rust-axum",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel",
+      "identityStore": { "provider": "json-file", "productionReady": false },
+      "refreshCoordination": { "provider": "process-local", "productionReady": false }
+    },
+    "graph": {
+      "provider": "neo4j-aura",
+      "schema": "docker/neo4j/init/01-schema.cypher",
+      "migrationMode": "release-gate-required"
+    },
+    "auth": {
+      "provider": "github-oauth",
+      "callbackPath": "/auth/oauth/callback"
+    },
+    "dns": {
+      "provider": "hostinger",
+      "domain": "moriatz.com",
+      "hostname": "gitexplore.moriatz.com",
+      "ttl": 300
+    },
+    "designSystem": {
+      "provider": "strawn",
+      "source": "npm",
+      "version": "0.2.0",
+      "packages": ["strawn", "strawn-icons"]
+    }
+  },
+  "runtimeEnvironment": {
+    "public": [],
+    "server": [
+      "GITEXPLORE_FRONTEND_ORIGIN",
+      "GITEXPLORE_GITHUB_CLIENT_ID",
+      "GITEXPLORE_GITHUB_CLIENT_SECRET",
+      "GITEXPLORE_GITHUB_REDIRECT_URI",
+      "GITEXPLORE_GITHUB_SCOPES",
+      "GITEXPLORE_GRAPH_BACKEND",
+      "GITEXPLORE_DEPLOYMENT_MODE",
+      "GITEXPLORE_IDENTITY_ENCRYPTION_KEY",
+      "GITEXPLORE_NEO4J_URI",
+      "GITEXPLORE_NEO4J_USERNAME",
+      "GITEXPLORE_NEO4J_PASSWORD",
+      "GITEXPLORE_NEO4J_DATABASE",
+      "GITEXPLORE_NEO4J_MAX_TOTAL_NODES",
+      "GITEXPLORE_NEO4J_MAX_TOTAL_RELATIONSHIPS"
+    ]
+  },
+  "urls": { "local": "http://localhost:3000" },
+  "status": "local",
+  "productionReadiness": {
+    "ready": false,
+    "blockers": [
+      "durable-identity-and-session-store",
+      "distributed-oauth-state",
+      "distributed-refresh-coordination",
+      "neo4j-aura-schema-migration-gate"
+    ]
+  }
+}

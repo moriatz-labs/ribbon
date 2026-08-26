@@ -2,8 +2,6 @@ import { Box } from "strawn";
 import { HeroSection } from "../components/HeroSection";
 import { LandingFooter } from "../components/LandingFooter";
 import { LandingHeader } from "../components/LandingHeader";
-import { ManifestSection } from "../components/ManifestSection";
-import { ProvidersSection } from "../components/ProvidersSection";
 import { WorkflowSection } from "../components/WorkflowSection";
 
 export function PublicLandingPage() {
@@ -13,9 +11,7 @@ export function PublicLandingPage() {
       <LandingHeader />
       <main id="main-content">
         <HeroSection />
-        <ProvidersSection />
         <WorkflowSection />
-        <ManifestSection />
       </main>
       <LandingFooter />
     </Box>
