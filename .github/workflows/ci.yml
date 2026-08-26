@@ -118,9 +118,3 @@ jobs:
         run: |
           printf '{"project":"ribbon","url":"%s","commit":"%s"}\n' "${{ steps.deploy.outputs.url }}" "${{ github.sha }}" > deployment.json
           cat deployment.json >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: deployment-url
-          path: deployment.json
-          retention-days: 30
-

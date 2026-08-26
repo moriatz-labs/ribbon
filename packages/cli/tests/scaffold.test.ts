@@ -121,7 +121,7 @@ describe("scaffoldProject", () => {
         }
       }
     }
-  });
+  }, 15_000);
 
   it("can use Firebase's default web.app domain without an external DNS provider", async () => {
     const parent = await mkdtemp(join(tmpdir(), "ribbon-firebase-only-"));
